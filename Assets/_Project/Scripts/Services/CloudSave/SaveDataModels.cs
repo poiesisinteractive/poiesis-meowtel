@@ -33,6 +33,7 @@ namespace CatHotel.Services
         public bool tutorialComplete;    // true once the tutorial is fully done OR skipped — never wipe save afterwards
         public int highestUnlockedFloor; // 0 = only RDC, 1 = floor 1 unlocked, ...
         public string lastSaveTime;      // ISO 8601
+        public int playTimeSeconds;      // active seconds played in the hotel (analytics minutes_played). 0 for saves <= 0.35
     }
 
     [Serializable]

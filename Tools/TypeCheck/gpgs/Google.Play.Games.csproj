@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Mirrors Assets/GooglePlayGames/com.google.play.games/Runtime/Google.Play.Games.asmdef
+       (includePlatforms: Android, Editor). REAL plugin sources, compiled in place: no stub needed. -->
+  <PropertyGroup>
+    <AssemblyName>Google.Play.Games</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MeowtelRepo)/Assets/GooglePlayGames/com.google.play.games/Runtime/**/*.cs"
+             Exclude="$(MeowtelRepo)/Assets/GooglePlayGames/com.google.play.games/Runtime/**/Editor/**" />
+  </ItemGroup>
+</Project>

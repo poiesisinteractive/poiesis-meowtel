@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- REAL sources of com.unity.ugui 1.0.0 (Unity 2021.1.17f1 snapshot, needle-mirror): the last ugui published as a
+       standalone package. The project runs ugui 2.0.0 (Unity 6 built-in), whose UI API is a superset of 1.0. -->
+  <PropertyGroup>
+    <AssemblyName>UnityEngine.UI</AssemblyName>
+    <PkgDir>$(HarnessRoot)lib/pkgsrc/com.unity.ugui@1.0.0-2021.1.17/</PkgDir>
+    <DefineConstants>$(DefineConstants);PACKAGE_PHYSICS;PACKAGE_PHYSICS2D;PACKAGE_TILEMAP;PACKAGE_ANIMATION;PACKAGE_UITOOLKIT</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(PkgDir)Runtime/**/*.cs" />
+  </ItemGroup>
+</Project>

@@ -96,6 +96,7 @@ namespace CatHotel.Services
                     {
                         Debug.Log("[CloudSaveManager] Found pending sync from previous session");
                         await ResolvePendingSyncAsync(pending);
+                        if (_loadCancelled) return;
                     }
 
                     Debug.Log("[CloudSaveManager] Loaded from cloud");
@@ -165,7 +166,9 @@ namespace CatHotel.Services
 
             if (winnerProg != null) HasPersistedSave = true;
 
-            // If LOCAL was newer, push it back to cloud now (don't wait for next save)
+            // If LOCAL was newer, push it back to cloud now (don't wait for next save).
+            // This is also how a local save reaches a new, empty UGS environment.
+            bool progressionPushFailed = false;
             if (sourceProg == "local" && localProgression != null)
             {
                 try
@@ -177,16 +180,21 @@ namespace CatHotel.Services
                 {
                     Debug.LogWarning($"[CloudSaveManager] Failed to push newer local to cloud: {e.Message}");
                     // Will retry via TrySyncPendingAsync below
-                    LocalSaveProvider.SetPendingSync(_settingsDirty, true);
+                    progressionPushFailed = true;
+                    // Keep the on-disk settings flag: settings changed offline must still win below
+                    var pendingDisk = LocalSaveProvider.LoadPendingSync();
+                    LocalSaveProvider.SetPendingSync(pendingDisk.settingsDirty || _settingsDirty, true);
                     _progressionDirty = true;
                     HasPendingSync = true;
                 }
             }
+            if (_loadCancelled) return;
 
             // ----- Settings: same logic but only when both are present (no timestamp on settings) -----
             // Settings has no timestamp; assume cloud > local (last device that changed settings synced)
             // unless pending sync flag says local hasn't been pushed yet.
             var pendingNow = LocalSaveProvider.LoadPendingSync();
+            bool settingsPushFailed = false;
             if (pendingNow.settingsDirty && localSettings != null)
             {
                 Settings = localSettings;
@@ -198,6 +206,7 @@ namespace CatHotel.Services
                 catch (Exception e)
                 {
                     Debug.LogWarning($"[CloudSaveManager] Failed to push dirty settings: {e.Message}");
+                    settingsPushFailed = true;
                 }
             }
             else
@@ -205,13 +214,26 @@ namespace CatHotel.Services
                 Settings = cloudSettings ?? localSettings ?? new SettingsSaveData();
             }
 
+            if (_loadCancelled) return; // caller timed out: never overwrite the local cache with this snapshot
+
             // Update local cache with the winning data so next offline boot is correct
             LocalSaveProvider.SaveSettings(Settings);
             LocalSaveProvider.SaveProgression(Progression);
-            LocalSaveProvider.ClearPendingSync();
-            _settingsDirty = false;
-            _progressionDirty = false;
-            HasPendingSync = false;
+            if (progressionPushFailed || settingsPushFailed)
+            {
+                // Keep the retry: the newer local data is not on the cloud yet
+                LocalSaveProvider.SetPendingSync(settingsPushFailed, progressionPushFailed);
+                _settingsDirty = settingsPushFailed;
+                _progressionDirty = progressionPushFailed;
+                HasPendingSync = true;
+            }
+            else
+            {
+                LocalSaveProvider.ClearPendingSync();
+                _settingsDirty = false;
+                _progressionDirty = false;
+                HasPendingSync = false;
+            }
 
             Debug.Log($"[CloudSaveManager] Load complete — progression source: {sourceProg ?? "none"}");
         }
@@ -257,6 +279,7 @@ namespace CatHotel.Services
                 Settings = localSettings;
                 try { await CloudSaveProvider.SaveAsync(SettingsKey, Settings); }
                 catch (Exception e) { Debug.LogWarning($"[CloudSaveManager] Settings sync failed: {e.Message}"); }
+                if (_loadCancelled) return;
             }
 
             // Progression: only push if local is actually newer than what's on the cloud
@@ -265,6 +288,7 @@ namespace CatHotel.Services
                 ProgressionSaveData cloudProgression = null;
                 try { cloudProgression = await CloudSaveProvider.LoadAsync<ProgressionSaveData>(ProgressionKey); }
                 catch { /* network blip — fallback to "trust local" */ }
+                if (_loadCancelled) return;
 
                 bool localWins = cloudProgression == null
                     || ParseSaveTime(localProgression.lastSaveTime)
@@ -294,6 +318,7 @@ namespace CatHotel.Services
                 }
             }
 
+            if (_loadCancelled) return;
             LocalSaveProvider.ClearPendingSync();
             HasPendingSync = false;
             _settingsDirty = false;

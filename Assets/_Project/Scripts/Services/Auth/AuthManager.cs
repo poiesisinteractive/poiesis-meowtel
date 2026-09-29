@@ -20,6 +20,7 @@ namespace CatHotel.Services
         public bool IsSignedIn { get; private set; }
         public bool IsGooglePlayLinked { get; private set; }
         public string PlayerId { get; private set; }
+        public string EnvironmentName { get; private set; }
 
         public event Action OnSignInComplete;
         public event Action<string> OnSignInFailed;
@@ -42,6 +43,12 @@ namespace CatHotel.Services
         {
             Exception lastError = null;
 
+            EnvironmentName = AuthConfig.ResolveEnvironmentName(_config);
+            Debug.Log($"[Auth] UGS environment: '{EnvironmentName}' ({AuthConfig.BuildKind})");
+
+            // Push the stored analytics choice before UnityServices init, so the SDK only starts when already granted.
+            GameAnalytics.SyncConsent();
+
             for (int attempt = 0; attempt < RetryDelaysMs.Length; attempt++)
             {
                 if (RetryDelaysMs[attempt] > 0)
@@ -50,8 +57,10 @@ namespace CatHotel.Services
                 try
                 {
                     var options = new InitializationOptions();
-                    options.SetEnvironmentName(_config.environmentName);
+                    options.SetEnvironmentName(EnvironmentName);
                     await UnityServices.InitializeAsync(options);
+                    // Before sign-in: Analytics doesn't need it, and events are buffered even if sign-in fails offline.
+                    GameAnalytics.NotifyServicesInitialized();
 
                     if (!AuthenticationService.Instance.IsSignedIn)
                         await AuthenticationService.Instance.SignInAnonymouslyAsync();

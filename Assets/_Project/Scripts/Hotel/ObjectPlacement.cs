@@ -295,6 +295,7 @@ namespace CatHotel.Hotel
             }
 
             UISoundManager.Instance?.PlayTapPositive();
+            CatHotel.Services.GameAnalytics.ObjectBought(_currentData.name, CatHotel.Services.GameAnalytics.CurrencyCoins, _currentData.cost);
 
             // Create the real HotelObject
             var go = new GameObject($"Obj_{_currentData.displayName}");

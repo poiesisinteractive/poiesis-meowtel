@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- REAL sources of com.unity.inputsystem 1.17.0 (needle-mirror), runtime assembly Unity.InputSystem (+ InputForUI plugin excluded). -->
+  <PropertyGroup>
+    <AssemblyName>Unity.InputSystem</AssemblyName>
+    <PkgDir>$(HarnessRoot)lib/pkgsrc/com.unity.inputsystem@1.17.0/</PkgDir>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- asmdef versionDefines resolved for this project (Unity 6000.3.5f2, modules from packages-lock.json), MINUS the
+         Unity-6-version ones (PLATFORM_SCROLL_DELTA, INPUT_MODULE_SCROLL_DELTA, INPUT_MODULE_NAVIGATION_DEVICE_TYPE,
+         SENDPOINTERHOVERTOPARENT, PLATFORM_POLLING_FREQUENCY): they switch internal code paths to Unity 6 engine/ugui 2.0
+         internals that the 2021.3 references and ugui 1.0 sources lack. The public API is the same either way. -->
+    <DefineConstants>$(DefineConstants);UNITY_INPUT_SYSTEM_ENABLE_PHYSICS;UNITY_INPUT_SYSTEM_ENABLE_PHYSICS2D;UNITY_INPUT_SYSTEM_ENABLE_UI;UNITY_INPUT_SYSTEM_ENABLE_ANALYTICS</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The Editor/ folder is inside the asmdef, so it belongs to this assembly (its code is #if UNITY_EDITOR guarded). -->
+    <Compile Include="$(PkgDir)InputSystem/**/*.cs" Exclude="$(PkgDir)InputSystem/Plugins/InputForUI/**" />
+    <ProjectReference Include="UnityEngine.UI.csproj" />
+  </ItemGroup>
+</Project>

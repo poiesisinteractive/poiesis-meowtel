@@ -56,6 +56,7 @@ namespace CatHotel.UI
         private TMP_Text _remainingAds;
         private TMP_Text _doubleGainsLabel;
         private GameObject _doubleGainLockObj;
+        private bool _boostOfferAvailable; // analytics: last known boost availability
         private RectTransform _starRt;
         private GameObject _x2BoostActiveObj;
         private TMP_Text _x2BoostActiveText;
@@ -385,11 +386,15 @@ namespace CatHotel.UI
             var ads = AdManager.Instance;
             var boost = RevenueBoostManager.Instance;
             if (ads == null) { Debug.LogWarning("[HUD] AddBoost click ignored: AdManager.Instance is null"); return; }
-            if (!ads.IsAdReady) { Debug.LogWarning("[HUD] AddBoost click ignored: ad not ready"); return; }
-            if (ads.HasReachedDailyCap) { Debug.LogWarning("[HUD] AddBoost click ignored: daily cap reached"); return; }
+            if (!ads.CanShowRewardedFor(AdManager.PlacementBoostX2)) { Debug.LogWarning("[HUD] AddBoost click ignored: no ad available"); return; }
             if (boost != null && boost.IsBoosted) { Debug.LogWarning("[HUD] AddBoost click ignored: boost already active"); return; }
+            if (IsTutorialActive) { Debug.LogWarning("[HUD] AddBoost click ignored: tutorial in progress"); return; }
 
-            if (ads.ShowRewardedAd() && _starRt != null)
+            bool shown = ads.ShowRewarded(AdManager.PlacementBoostX2, rewarded =>
+            {
+                if (rewarded) RevenueBoostManager.Instance?.ActivateBoost();
+            });
+            if (shown && _starRt != null)
             {
                 _starRt.DOKill();
                 _starRt.localScale = Vector3.one;
@@ -398,6 +403,9 @@ namespace CatHotel.UI
                     .SetEase(Ease.OutQuad);
             }
         }
+
+        private static bool IsTutorialActive =>
+            CatHotel.Tutorial.TutorialManager.Instance != null && CatHotel.Tutorial.TutorialManager.Instance.IsActive;
 
         private void UpdateAdBoostUI()
         {
@@ -438,8 +446,14 @@ namespace CatHotel.UI
             }
 
             // Boost availability: can the player trigger a new boost right now?
-            bool canWatch = ads != null && ads.IsAdReady && !ads.HasReachedDailyCap
-                && (boost == null || !boost.IsBoosted);
+            bool canWatch = ads != null && ads.CanShowRewardedFor(AdManager.PlacementBoostX2)
+                && (boost == null || !boost.IsBoosted)
+                && !IsTutorialActive; // no ads during the tutorial
+
+            // Analytics: an 'offer' is each time the (permanent) boost button becomes usable
+            if (canWatch && !_boostOfferAvailable)
+                GameAnalytics.AdOfferShown(AdManager.PlacementBoostX2);
+            _boostOfferAvailable = canWatch;
 
             // Enable/disable button (blocked during active boost / no ad / cap)
             if (_addBoostButton != null)
