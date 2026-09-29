@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- REAL runtime sources of LevelPlay 9.4.0 (UnityLevelPlay_v9.4.0.unitypackage from github.com/ironsource-mobile/Unity-sdk,
+       extracted to lib/pkgsrc/levelplay@9.4.0). The project uses the UPM package com.unity.services.levelplay 9.4.1: same API line. -->
+  <PropertyGroup>
+    <AssemblyName>Unity.LevelPlay</AssemblyName>
+    <PkgDir>$(HarnessRoot)lib/pkgsrc/levelplay@9.4.0/Assets/LevelPlay/</PkgDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(PkgDir)Runtime/**/*.cs" Exclude="$(PkgDir)Runtime/**/Editor/**" />
+  </ItemGroup>
+</Project>

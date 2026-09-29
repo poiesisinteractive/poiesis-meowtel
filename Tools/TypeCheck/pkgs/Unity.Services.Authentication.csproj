@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- REAL sources of com.unity.services.authentication@3.6.1 (needle-mirror), compiled in place from lib/pkgsrc. -->
+  <PropertyGroup>
+    <AssemblyName>Unity.Services.Authentication</AssemblyName>
+    <PkgDir>$(HarnessRoot)lib/pkgsrc/com.unity.services.authentication@3.6.1/</PkgDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(PkgDir)Runtime/**/*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="$(NewtonsoftDll)"><Private>false</Private></Reference>
+    <ProjectReference Include="Unity.Services.Core.csproj" />
+
+  </ItemGroup>
+</Project>

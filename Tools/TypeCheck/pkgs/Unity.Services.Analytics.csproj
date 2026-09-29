@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- REAL sources of com.unity.services.analytics@6.3.0 (needle-mirror), compiled in place from lib/pkgsrc. -->
+  <PropertyGroup>
+    <AssemblyName>Unity.Services.Analytics</AssemblyName>
+    <PkgDir>$(HarnessRoot)lib/pkgsrc/com.unity.services.analytics@6.3.0/</PkgDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(PkgDir)Runtime/**/*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="$(NewtonsoftDll)"><Private>false</Private></Reference>
+    <ProjectReference Include="Unity.Services.Core.csproj" />
+    <!-- UnityEngine.UnityConsent (engine module, Unity 6.2+) when ENABLE_UNITY_CONSENT is defined -->
+    <ProjectReference Include="$(HarnessRoot)stubs/Stubs.csproj" />
+
+  </ItemGroup>
+</Project>

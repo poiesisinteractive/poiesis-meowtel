@@ -1,0 +1,33 @@
+<Project>
+  <!-- Assemblies that Unity auto-references from Assembly-CSharp and Assembly-CSharp-firstpass
+       (package asmdefs with autoReferenced=true, auto-referenced precompiled DLLs, Assets/Plugins DLLs). -->
+
+  <!-- Default: REAL package sources (lib/pkgsrc, see pkgs/*.csproj). -->
+  <ItemGroup Condition="'$(HarnessStubsOnly)' != 'true'">
+    <ProjectReference Include="$(HarnessRoot)pkgs/UnityEngine.UI.csproj" />
+    <ProjectReference Include="$(HarnessRoot)pkgs/Unity.TextMeshPro.csproj" />
+    <ProjectReference Include="$(HarnessRoot)pkgs/Unity.InputSystem.csproj" />
+    <ProjectReference Include="$(HarnessRoot)pkgs/Unity.Profiling.Core.csproj" />
+    <ProjectReference Include="$(HarnessRoot)pkgs/Unity.ResourceManager.csproj" />
+    <ProjectReference Include="$(HarnessRoot)pkgs/Unity.Addressables.csproj" />
+    <ProjectReference Include="$(HarnessRoot)pkgs/Unity.Services.Core.csproj" />
+    <ProjectReference Include="$(HarnessRoot)pkgs/Unity.Services.Authentication.csproj" />
+    <ProjectReference Include="$(HarnessRoot)pkgs/Unity.Services.CloudSave.csproj" />
+    <ProjectReference Include="$(HarnessRoot)pkgs/Unity.Services.Analytics.csproj" />
+    <ProjectReference Include="$(HarnessRoot)pkgs/Unity.LevelPlay.csproj" />
+  </ItemGroup>
+
+  <!-- Fallback (typecheck.sh with its stubs option): hand-written stubs, when the package sources cannot be fetched. -->
+  <ItemGroup Condition="'$(HarnessStubsOnly)' == 'true'">
+    <ProjectReference Include="$(HarnessRoot)stubs-fallback/StubsFallback.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- URP subset, Unity 6-only UnityEngine types, UnityEditor subset (Editor configuration only) -->
+    <ProjectReference Include="$(HarnessRoot)stubs/Stubs.csproj" />
+    <Reference Include="$(NewtonsoftDll)" Condition="Exists('$(NewtonsoftDll)')"><Private>false</Private></Reference>
+    <Reference Include="$(DOTweenDir)DOTween/DOTween.dll"><Private>false</Private></Reference>
+    <Reference Include="$(DOTweenDir)DOTweenPro/DOTweenPro.dll"><Private>false</Private></Reference>
+    <Reference Include="$(DOTweenDir)DemiLib/Core/DemiLib.dll"><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- REAL sources of com.unity.addressables 2.8.1 Runtime/ResourceManager (needle-mirror). -->
+  <PropertyGroup>
+    <AssemblyName>Unity.ResourceManager</AssemblyName>
+    <PkgDir>$(HarnessRoot)lib/pkgsrc/com.unity.addressables@2.8.1/</PkgDir>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants>$(DefineConstants);ENABLE_ASYNC_ASSETBUNDLE_UWR</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(PkgDir)Runtime/ResourceManager/**/*.cs" />
+    <ProjectReference Include="Unity.Profiling.Core.csproj" />
+  </ItemGroup>
+</Project>

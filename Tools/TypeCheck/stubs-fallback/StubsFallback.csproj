@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- FALLBACK ONLY (typecheck.sh with its stubs option): hand-written stubs of ugui/EventSystems, TMPro, Input System,
+       Addressables, UGS Core/Auth/CloudSave/Analytics and LevelPlay, used when lib/pkgsrc (real package sources)
+       cannot be fetched. Less faithful than the real sources: members marked GUESS / API-BELIEF are unverified. -->
+  <PropertyGroup>
+    <AssemblyName>Meowtel.Harness.StubsFallback</AssemblyName>
+    <NoWarn>$(NoWarn);CS0626;CS0824;CS0067;CS8618</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="**/*.cs" Exclude="obj/**;bin/**" />
+  </ItemGroup>
+</Project>
