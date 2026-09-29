@@ -150,8 +150,8 @@ namespace CatHotel.Tutorial
                 // --- Dialogue step ---
                 if (step.HasDialogue)
                 {
-                    // Show "Skip tutorial" link only on the very first step
-                    bool showSkip = _currentStep == 0;
+                    // "Skip tutorial" is offered on every dialogue step (with a confirmation popup)
+                    const bool showSkip = true;
                     _narrationUI.Show(step.speakerLabelKey, step.speakerPortrait, step.textKey,
                         showSkip, step.bubbleOnRight);
                 }
@@ -249,10 +249,15 @@ namespace CatHotel.Tutorial
             // Release camera focus if any
             if (_cameraFocus != null) _cameraFocus.Release();
 
-            // Restore game state
+            // Restore game state (skip can now happen during a highlight step)
             RestoreGameUI();
             ClearShopFilter();
             UnfreezeAllCats();
+            RestoreDimmedHud();
+            StopPulse();
+            foreach (var go in _temporarilyEnabledForHighlight)
+                if (go != null) go.SetActive(false);
+            _temporarilyEnabledForHighlight.Clear();
             UnsubscribeEvents();
 
             // Clean up tutorial-spawned cats that may still be frozen/idle

@@ -150,15 +150,29 @@ namespace CatHotel.Hotel
                     CloudSaveManager.Instance.LoadFromLocal();
             }
 
-            // If the previous session ended while the tutorial was still in progress,
-            // wipe the save so the player must redo the tutorial from scratch (and the
-            // game state isn't half-set from a partial tutorial run).
+            // The previous session ended while the tutorial was still in progress (B-2).
+            // Never wipe the save: the tutorial's transient state (frozen cats, shop filter,
+            // highlights) can't be resumed mid-way, so either
+            // - the player already built something → the tutorial is marked complete;
+            // - otherwise → the tutorial restarts from the beginning, the save is kept.
             if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.IsLoaded
                 && CloudSaveManager.Instance.HasPersistedSave
                 && !CloudSaveManager.Instance.Progression.tutorialComplete)
             {
-                Debug.Log("[Hotel] Tutorial was incomplete on quit — wiping save to restart it.");
-                CloudSaveManager.Instance.ResetAllData();
+                var prog = CloudSaveManager.Instance.Progression;
+                bool hotelStarted = (prog.placedObjects != null && prog.placedObjects.Count > 0)
+                    || prog.reputationLevel > 0;
+                if (hotelStarted)
+                {
+                    Debug.Log("[Hotel] Tutorial was incomplete on quit, hotel already started — marking it complete.");
+                    prog.tutorialComplete = true;
+                    CloudSaveManager.Instance.SaveProgressionImmediate();
+                }
+                else
+                {
+                    Debug.Log("[Hotel] Tutorial was incomplete on quit — restarting it (save kept).");
+                    prog.tutorialStepIndex = 0;
+                }
             }
 
             // Init economy + reputation from save if available, otherwise defaults
@@ -206,7 +220,10 @@ namespace CatHotel.Hotel
             {
                 var save = CloudSaveManager.Instance;
                 bool isNewGame = save == null || !save.IsLoaded || !save.HasPersistedSave;
-                int resumeStep = isNewGame ? 0 : save.Progression.tutorialStepIndex;
+                // Completed tutorial → past the last step, whatever the sequence length
+                int resumeStep = isNewGame ? 0
+                    : save.Progression.tutorialComplete ? int.MaxValue
+                    : save.Progression.tutorialStepIndex;
                 tutMgr.Begin(resumeStep);
             }
             else
