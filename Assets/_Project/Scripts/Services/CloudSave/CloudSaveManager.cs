@@ -181,7 +181,9 @@ namespace CatHotel.Services
                     Debug.LogWarning($"[CloudSaveManager] Failed to push newer local to cloud: {e.Message}");
                     // Will retry via TrySyncPendingAsync below
                     progressionPushFailed = true;
-                    LocalSaveProvider.SetPendingSync(_settingsDirty, true);
+                    // Keep the on-disk settings flag: settings changed offline must still win below
+                    var pendingDisk = LocalSaveProvider.LoadPendingSync();
+                    LocalSaveProvider.SetPendingSync(pendingDisk.settingsDirty || _settingsDirty, true);
                     _progressionDirty = true;
                     HasPendingSync = true;
                 }
@@ -192,6 +194,7 @@ namespace CatHotel.Services
             // Settings has no timestamp; assume cloud > local (last device that changed settings synced)
             // unless pending sync flag says local hasn't been pushed yet.
             var pendingNow = LocalSaveProvider.LoadPendingSync();
+            bool settingsPushFailed = false;
             if (pendingNow.settingsDirty && localSettings != null)
             {
                 Settings = localSettings;
@@ -203,6 +206,7 @@ namespace CatHotel.Services
                 catch (Exception e)
                 {
                     Debug.LogWarning($"[CloudSaveManager] Failed to push dirty settings: {e.Message}");
+                    settingsPushFailed = true;
                 }
             }
             else
@@ -215,12 +219,12 @@ namespace CatHotel.Services
             // Update local cache with the winning data so next offline boot is correct
             LocalSaveProvider.SaveSettings(Settings);
             LocalSaveProvider.SaveProgression(Progression);
-            if (progressionPushFailed)
+            if (progressionPushFailed || settingsPushFailed)
             {
-                // Keep the retry: the newer local progression is not on the cloud yet
-                LocalSaveProvider.SetPendingSync(false, true);
-                _settingsDirty = false;
-                _progressionDirty = true;
+                // Keep the retry: the newer local data is not on the cloud yet
+                LocalSaveProvider.SetPendingSync(settingsPushFailed, progressionPushFailed);
+                _settingsDirty = settingsPushFailed;
+                _progressionDirty = progressionPushFailed;
                 HasPendingSync = true;
             }
             else

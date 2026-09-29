@@ -13,7 +13,8 @@ namespace CatHotel.Services
         [Tooltip("Environnement UGS de l'éditeur et des Development Builds (données de test).")]
         public string environmentName = DevEnvironment;
 
-        [Tooltip("Environnement UGS des builds non-Development (Play Store).")]
+        [Tooltip("Environnement UGS des builds non-Development (Play Store). Les sauvegardes cloud des joueurs " +
+                 "<= 0.40 sont dans 'development' : ne passer à 'production' qu'après les y avoir copiées.")]
         public string releaseEnvironmentName = ReleaseEnvironment;
 
         public const string DevEnvironment = "development";

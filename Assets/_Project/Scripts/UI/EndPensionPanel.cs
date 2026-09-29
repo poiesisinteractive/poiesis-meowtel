@@ -97,9 +97,19 @@ namespace CatHotel.UI
             }
         }
 
+        private bool _listeningLanguage;
+
         private void OnDestroy()
         {
             if (_adsSubscribed != null) _adsSubscribed.OnAdAvailabilityChanged -= OnAdAvailabilityChanged;
+            if (_listeningLanguage) Core.LocalizedStrings.OnLanguageChanged -= OnLanguageChanged;
+        }
+
+        // SceneTextLocalizer re-applies the pension wording to the shared labels on a language
+        // change; re-apply the current variant after it (subscribed later, so called later).
+        private void OnLanguageChanged()
+        {
+            if (_isOpen) ApplyVariantTexts(_data);
         }
 
         private void CacheReferences()
@@ -211,6 +221,11 @@ namespace CatHotel.UI
             _sessionId++;
             _offerTracked = false;
             SubscribeToAds();
+            if (!_listeningLanguage)
+            {
+                Core.LocalizedStrings.OnLanguageChanged += OnLanguageChanged;
+                _listeningLanguage = true;
+            }
 
             UISoundManager.Instance?.PlayOpenSection();
             _panelObj.SetActive(true);

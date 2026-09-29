@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CatHotel.Services.AuthConfig
   webClientId: 792959166081-1o02m9g3ttdeqg6e7g3mq7qu0s20h5n7.apps.googleusercontent.com
   environmentName: development
-  releaseEnvironmentName: production
+  releaseEnvironmentName: development

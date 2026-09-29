@@ -14,7 +14,7 @@ namespace CatHotel.Services
     /// and as offline fallback when cloud is unavailable.
     ///
     /// Writes are atomic (write "file.tmp", then replace "file", keeping the previous
-    /// version as "file.bak"), serialized behind a single lock, and ordered: every request
+    /// version as "file.bak"), serialized per file behind a lock, and ordered: every request
     /// takes a sequence number on the main thread, and a write older than what is already
     /// on disk for that path is dropped. Loads recover from ".tmp" then ".bak" when the
     /// main file is missing or unreadable.
@@ -32,11 +32,29 @@ namespace CatHotel.Services
         // Same bytes as File.WriteAllText: UTF-8 without BOM.
         private static readonly UTF8Encoding Utf8NoBom = new UTF8Encoding(false);
 
-        // All disk work (read, write, delete, recovery) happens under this lock.
-        private static readonly object IoLock = new object();
+        // One lock per file: all disk work on a file (read, write, delete, recovery) happens under it,
+        // so a background write of one file never stalls the main thread on another.
+        private sealed class PathState
+        {
+            public readonly object Lock = new object();
+            public long CommittedSeq; // highest request committed for this file, only touched under Lock
+        }
+        private static readonly object StatesGuard = new object();
+        private static readonly Dictionary<string, PathState> States = new Dictionary<string, PathState>();
         private static long _writeSeq;
-        // Highest request committed per path. Only touched under IoLock.
-        private static readonly Dictionary<string, long> CommittedSeq = new Dictionary<string, long>();
+
+        private static PathState StateFor(string path)
+        {
+            lock (StatesGuard)
+            {
+                if (!States.TryGetValue(path, out var state))
+                {
+                    state = new PathState();
+                    States[path] = state;
+                }
+                return state;
+            }
+        }
 
         private static string SettingsPath =>
             Path.Combine(Application.persistentDataPath, SettingsFile);
@@ -122,7 +140,8 @@ namespace CatHotel.Services
             {
                 // JsonUtility must run on main thread
                 string json = JsonUtility.ToJson(data, true);
-                lock (IoLock) CommitLocked(path, json, seq, keepBackup, durable);
+                var state = StateFor(path);
+                lock (state.Lock) CommitLocked(state, path, json, seq, keepBackup, durable);
             }
             catch (Exception e)
             {
@@ -138,12 +157,13 @@ namespace CatHotel.Services
             {
                 // JsonUtility must run on main thread — snapshot before any await, only offload I/O
                 string json = JsonUtility.ToJson(data, false);
+                var state = StateFor(path);
 #if UNITY_WEBGL && !UNITY_EDITOR
                 // No worker threads on WebGL: commit synchronously.
-                lock (IoLock) CommitLocked(path, json, seq, true, true);
+                lock (state.Lock) CommitLocked(state, path, json, seq, true, true);
                 await Task.CompletedTask;
 #else
-                await Task.Run(() => { lock (IoLock) CommitLocked(path, json, seq, true, true); });
+                await Task.Run(() => { lock (state.Lock) CommitLocked(state, path, json, seq, true, true); });
 #endif
             }
             catch (Exception e)
@@ -152,16 +172,16 @@ namespace CatHotel.Services
             }
         }
 
-        // Caller holds IoLock.
-        private static void CommitLocked(string path, string json, long seq, bool keepBackup, bool durable)
+        // Caller holds state.Lock.
+        private static void CommitLocked(PathState state, string path, string json, long seq, bool keepBackup, bool durable)
         {
-            if (CommittedSeq.TryGetValue(path, out var last) && seq < last)
+            if (seq < state.CommittedSeq)
                 return; // a newer write or delete is already on disk
             WriteAtomicLocked(path, json, keepBackup, durable);
-            CommittedSeq[path] = seq;
+            state.CommittedSeq = seq;
         }
 
-        // Caller holds IoLock. Temp file in the same directory, so the rename never crosses devices.
+        // Caller holds the file's lock. Temp file in the same directory, so the rename never crosses devices.
         private static void WriteAtomicLocked(string path, string json, bool keepBackup, bool durable)
         {
             string tmp = path + TmpSuffix;
@@ -217,7 +237,7 @@ namespace CatHotel.Services
 
         private static T ReadJson<T>(string path) where T : class
         {
-            lock (IoLock)
+            lock (StateFor(path).Lock)
             {
                 var status = TryReadLocked(path, out T data);
                 if (status == ReadStatus.Ok) return data;
@@ -237,7 +257,7 @@ namespace CatHotel.Services
             }
         }
 
-        // Caller holds IoLock.
+        // Caller holds the file's lock.
         private static ReadStatus TryReadLocked<T>(string path, out T data) where T : class
         {
             data = null;
@@ -269,7 +289,7 @@ namespace CatHotel.Services
             return data != null ? ReadStatus.Ok : ReadStatus.Corrupt;
         }
 
-        // Caller holds IoLock. Moves a corrupt main file aside so it never rotates into .bak.
+        // Caller holds the file's lock. Moves a corrupt main file aside so it never rotates into .bak.
         private static void Quarantine(string path)
         {
             try
@@ -284,7 +304,7 @@ namespace CatHotel.Services
             }
         }
 
-        // Caller holds IoLock. Restores a recovered sidecar as the main file (.bak is kept).
+        // Caller holds the file's lock. Restores a recovered sidecar as the main file (.bak is kept).
         private static void Promote(string candidate, string path)
         {
             try
@@ -313,9 +333,10 @@ namespace CatHotel.Services
         private static void DeleteAll(string path)
         {
             long seq = NextSeq();
-            lock (IoLock)
+            var state = StateFor(path);
+            lock (state.Lock)
             {
-                CommittedSeq[path] = seq;
+                state.CommittedSeq = seq;
                 foreach (var p in new[] { path, path + TmpSuffix, path + BakSuffix, path + CorruptSuffix })
                 {
                     try

@@ -45,8 +45,6 @@ namespace CatHotel.Services
 
             EnvironmentName = AuthConfig.ResolveEnvironmentName(_config);
             Debug.Log($"[Auth] UGS environment: '{EnvironmentName}' ({AuthConfig.BuildKind})");
-            if (!AuthConfig.IsDevBuild && EnvironmentName != AuthConfig.ReleaseEnvironment)
-                Debug.LogWarning("[Auth] Release build is NOT using the 'production' UGS environment — check AuthConfig.releaseEnvironmentName");
 
             // Push the stored analytics choice before UnityServices init, so the SDK only starts when already granted.
             GameAnalytics.SyncConsent();
