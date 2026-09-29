@@ -137,7 +137,7 @@ namespace CatHotel.Boot
             var p = mgr.Progression;
             string lastSave = string.IsNullOrEmpty(p?.lastSaveTime) ? "never" : p.lastSaveTime;
             string source = mgr.IsCloudAvailable ? "cloud" : "local-only";
-            Debug.Log(
+            DevLog.Always(
                 $"[Boot] Save state — source={source}, hasSave={mgr.HasPersistedSave}, " +
                 $"pendingSync={mgr.HasPendingSync}, lastSaveTime={lastSave}, " +
                 $"coins={p?.coins}, rep={p?.reputationLevel}, " +

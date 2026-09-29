@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
+using CatHotel.Core;
 using Unity.Services.CloudSave;
 using Unity.Services.CloudSave.Models;
 using DeleteOptions = Unity.Services.CloudSave.Models.Data.Player.DeleteOptions;
@@ -20,7 +21,7 @@ namespace CatHotel.Services
             string json = JsonUtility.ToJson(data);
             var saveData = new Dictionary<string, object> { { key, json } };
             await CloudSaveService.Instance.Data.Player.SaveAsync(saveData);
-            Debug.Log($"[CloudSave] Saved key '{key}'");
+            DevLog.Log($"[CloudSave] Saved key '{key}'");
         }
 
         /// <summary>Load a serializable object from the given key. Returns null if not found.</summary>

@@ -53,6 +53,7 @@ namespace CatHotel.Cats
         private CatHotel.Grid.GridRenderer _gridRenderer;
         private CatSpawner _spawner;
         private CatNeeds _needs;
+        private CatHappiness _happiness; // added before CatEntity in every spawn path
         private CatBreedData _breed;
         private Vector2Int _gridPos;
         private Sequence _moveSequence;
@@ -136,6 +137,7 @@ namespace CatHotel.Cats
             _sr = GetComponent<SpriteRenderer>();
             _animator = GetComponent<Animator>();
             _needs = GetComponent<CatNeeds>();
+            _happiness = GetComponent<CatHappiness>();
             transform.position = CellToWorld(startCell);
 
             _currentDir = CatDirection.Front;
@@ -367,8 +369,7 @@ namespace CatHotel.Cats
             if (_spawner == null || !CanFight()) return false;
 
             // Only fight if happiness is low (GDD: < 50%)
-            var happiness = GetComponent<CatHappiness>();
-            if (happiness != null && happiness.Value >= 50f) return false;
+            if (_happiness != null && _happiness.Value >= 50f) return false;
 
             // Find nearest cat on the SAME Y row and within 1.5 cells horizontally
             CatEntity neighbor = null;
@@ -420,10 +421,8 @@ namespace CatHotel.Cats
             right.transform.position = new Vector3(midX + 0.4f, midY, 0f);
 
             // Apply happiness penalty (GDD: -25)
-            var leftH = left.GetComponent<CatHappiness>();
-            var rightH = right.GetComponent<CatHappiness>();
-            leftH?.ApplyFightPenalty();
-            rightH?.ApplyFightPenalty();
+            if (left._happiness != null) left._happiness.ApplyFightPenalty();
+            if (right._happiness != null) right._happiness.ApplyFightPenalty();
 
             var seq = DOTween.Sequence();
             GameObject cloudGo = null;
@@ -753,7 +752,7 @@ namespace CatHotel.Cats
             float ratePerSec = _targetObject.SatisfactionRate;
             float elapsed = 0f;
 
-            Debug.Log($"[CatEntity] {gameObject.name} started using object for need={need}, duration={duration}s");
+            DevLog.Log($"[CatEntity] {name} started using object for need={need}, duration={duration}s");
             _pendingAction = DOVirtual.Float(0f, duration, duration, t =>
             {
                 float dt = t - elapsed;
@@ -762,7 +761,7 @@ namespace CatHotel.Cats
                     _needs.Satisfy(need, ratePerSec * dt);
             }).OnComplete(() =>
             {
-                Debug.Log($"[CatEntity] {gameObject.name} finished using object, firing OnServiceUsed (listeners={OnServiceUsed?.GetInvocationList()?.Length ?? 0})");
+                DevLog.Log($"[CatEntity] {name} finished using object");
                 ReleaseCurrentObject();
                 _chosenRestState = null;
                 OnServiceUsed?.Invoke();
@@ -943,7 +942,7 @@ namespace CatHotel.Cats
                 }
                 // Run state missing for this breed — fall back to Walk so the cat
                 // still animates instead of sliding with a static sprite.
-                Debug.LogWarning($"[CatEntity] Missing {runState} on '{_animator?.runtimeAnimatorController?.name}' — fallback to Walk_{dir}");
+                DevLog.Warn($"[CatEntity] Missing {runState} on '{_animator?.runtimeAnimatorController?.name}' — fallback to Walk_{dir}");
             }
             PlayAnimState($"Walk_{dir}");
         }

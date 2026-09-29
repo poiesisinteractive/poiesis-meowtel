@@ -267,7 +267,7 @@ namespace CatHotel.Hotel
             if (coins > 0)
             {
                 _economy.AddCoins(coins);
-                Debug.Log($"[Hotel] Passive income tick: +{coins} coins from hidden floors.");
+                DevLog.Log($"[Hotel] Passive income tick: +{coins} coins from hidden floors.");
             }
         }
 
@@ -477,12 +477,11 @@ namespace CatHotel.Hotel
         /// <summary>Called when a cat finishes using a service object. Spawns a floating coin.</summary>
         private void OnCatServiceUsed(CatInstance cat)
         {
-            Debug.Log($"[Hotel] OnCatServiceUsed for {cat.CatName}, entity={cat.Entity != null}, happiness={cat.Happiness?.Value}, isUnhappy={cat.Happiness?.IsUnhappy}");
+            DevLog.Log($"[Hotel] OnCatServiceUsed for {cat.CatName}, entity={cat.Entity != null}, happiness={cat.Happiness?.Value}, isUnhappy={cat.Happiness?.IsUnhappy}");
             Tutorial.TutorialManager.Instance?.NotifyEvent(Tutorial.TutorialTrigger.WaitForCatServiceUsed);
             if (cat.Entity == null || cat.Happiness == null) return;
             if (cat.Happiness.IsUnhappy) return;
 
-            Debug.Log($"[Hotel] Calling ProcessRevenueTick for {cat.CatName}");
             _economy.ProcessRevenueTick(
                 cat.Happiness, cat.Breed, cat.Entity.transform, cat.IsSpecial);
         }

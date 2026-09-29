@@ -96,6 +96,7 @@ namespace CatHotel.Services
                     {
                         Debug.Log("[CloudSaveManager] Found pending sync from previous session");
                         await ResolvePendingSyncAsync(pending);
+                        if (_loadCancelled) return;
                     }
 
                     Debug.Log("[CloudSaveManager] Loaded from cloud");
@@ -182,6 +183,7 @@ namespace CatHotel.Services
                     HasPendingSync = true;
                 }
             }
+            if (_loadCancelled) return;
 
             // ----- Settings: same logic but only when both are present (no timestamp on settings) -----
             // Settings has no timestamp; assume cloud > local (last device that changed settings synced)
@@ -204,6 +206,8 @@ namespace CatHotel.Services
             {
                 Settings = cloudSettings ?? localSettings ?? new SettingsSaveData();
             }
+
+            if (_loadCancelled) return; // caller timed out: never overwrite the local cache with this snapshot
 
             // Update local cache with the winning data so next offline boot is correct
             LocalSaveProvider.SaveSettings(Settings);
@@ -257,6 +261,7 @@ namespace CatHotel.Services
                 Settings = localSettings;
                 try { await CloudSaveProvider.SaveAsync(SettingsKey, Settings); }
                 catch (Exception e) { Debug.LogWarning($"[CloudSaveManager] Settings sync failed: {e.Message}"); }
+                if (_loadCancelled) return;
             }
 
             // Progression: only push if local is actually newer than what's on the cloud
@@ -265,6 +270,7 @@ namespace CatHotel.Services
                 ProgressionSaveData cloudProgression = null;
                 try { cloudProgression = await CloudSaveProvider.LoadAsync<ProgressionSaveData>(ProgressionKey); }
                 catch { /* network blip — fallback to "trust local" */ }
+                if (_loadCancelled) return;
 
                 bool localWins = cloudProgression == null
                     || ParseSaveTime(localProgression.lastSaveTime)
@@ -294,6 +300,7 @@ namespace CatHotel.Services
                 }
             }
 
+            if (_loadCancelled) return;
             LocalSaveProvider.ClearPendingSync();
             HasPendingSync = false;
             _settingsDirty = false;
