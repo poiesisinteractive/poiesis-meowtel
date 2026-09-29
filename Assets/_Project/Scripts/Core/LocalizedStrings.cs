@@ -134,11 +134,11 @@ namespace CatHotel.Core
         {
             // --- Consent / RGPD ---
             { "consent.title", "Confidentialité & publicités" },
-            { "consent.body", "Pour soutenir le développement du jeu, Meowtel propose des publicités optionnelles avec récompenses. Acceptez-vous l'utilisation de votre identifiant publicitaire afin d'afficher des publicités personnalisées ? Vous pourrez modifier ce choix à tout moment dans le menu du jeu, rubrique « Confidentialité »." },
+            { "consent.body", "Pour soutenir le développement du jeu, Meowtel propose des publicités optionnelles avec récompenses. Acceptez-vous l'utilisation de votre identifiant publicitaire afin d'afficher des publicités personnalisées ? Vous pourrez modifier ce choix à tout moment dans le menu pause, rubrique « Confidentialité »." },
             { "consent.accept", "Accepter" },
             { "consent.refuse", "Refuser" },
             { "consent.analytics.title", "Statistiques d'utilisation" },
-            { "consent.analytics.body", "Jasper aimerait tenir le carnet de bord de l'hôtel pour l'améliorer. Acceptez-vous que Meowtel envoie à Unity Analytics des statistiques d'utilisation (progression, publicités regardées, type d'appareil), liées à un identifiant technique et non à votre nom ? Refuser ne change rien à votre partie. Vous pourrez modifier ce choix à tout moment dans le menu du jeu, rubrique « Confidentialité »." },
+            { "consent.analytics.body", "Pour améliorer le jeu, acceptez-vous que Meowtel envoie à Unity Analytics des statistiques d'utilisation (progression, publicités regardées, type d'appareil), liées à un identifiant technique de joueur ? Refuser ne change rien à votre partie. Vous pourrez modifier ce choix à tout moment dans le menu pause, rubrique « Confidentialité »." },
             { "consent.current", "Votre choix actuel : {0}." },
             { "consent.state.accepted", "accepté" },
             { "consent.state.refused", "refusé" },
@@ -450,11 +450,11 @@ namespace CatHotel.Core
         {
             // --- Consent / GDPR ---
             { "consent.title", "Privacy & Ads" },
-            { "consent.body", "To support the game's development, Meowtel offers optional rewarded ads. Do you agree to the use of your advertising ID to display personalized ads? You can change this choice at any time from the game menu, under “Privacy”." },
+            { "consent.body", "To support the game's development, Meowtel offers optional rewarded ads. Do you agree to the use of your advertising ID to display personalized ads? You can change this choice at any time from the pause menu, under “Privacy”." },
             { "consent.accept", "Accept" },
             { "consent.refuse", "Decline" },
             { "consent.analytics.title", "Usage statistics" },
-            { "consent.analytics.body", "Jasper would like to keep the hotel's logbook to make it even better. Do you agree to Meowtel sending usage statistics (progress, ads watched, device type) to Unity Analytics, linked to a technical identifier and not to your name? Declining changes nothing in your game. You can change this choice at any time from the game menu, under “Privacy”." },
+            { "consent.analytics.body", "To improve the game, do you agree to Meowtel sending usage statistics (progress, ads watched, device type) to Unity Analytics, linked to a technical player identifier? Declining changes nothing in your game. You can change this choice at any time from the pause menu, under “Privacy”." },
             { "consent.current", "Your current choice: {0}." },
             { "consent.state.accepted", "accepted" },
             { "consent.state.refused", "declined" },
@@ -766,11 +766,11 @@ namespace CatHotel.Core
         {
             // --- Consent / DSGVO ---
             { "consent.title", "Datenschutz & Werbung" },
-            { "consent.body", "Zur Unterstützung der Spielentwicklung bietet Meowtel optionale Belohnungswerbung an. Stimmen Sie der Nutzung Ihrer Werbe-ID zur Anzeige personalisierter Werbung zu? Sie können diese Wahl jederzeit im Spielmenü unter „Datenschutz“ ändern." },
+            { "consent.body", "Zur Unterstützung der Spielentwicklung bietet Meowtel optionale Belohnungswerbung an. Stimmen Sie der Nutzung Ihrer Werbe-ID zur Anzeige personalisierter Werbung zu? Sie können diese Wahl jederzeit im Pause-Menü unter „Datenschutz“ ändern." },
             { "consent.accept", "Akzeptieren" },
             { "consent.refuse", "Ablehnen" },
             { "consent.analytics.title", "Nutzungsstatistiken" },
-            { "consent.analytics.body", "Jasper möchte das Logbuch des Hotels führen, um es noch besser zu machen. Stimmen Sie zu, dass Meowtel Nutzungsstatistiken (Fortschritt, angesehene Werbung, Gerätetyp) an Unity Analytics sendet, verknüpft mit einer technischen Kennung und nicht mit Ihrem Namen? Eine Ablehnung ändert nichts an Ihrem Spiel. Sie können diese Wahl jederzeit im Spielmenü unter „Datenschutz“ ändern." },
+            { "consent.analytics.body", "Stimmen Sie zu, dass Meowtel zur Verbesserung des Spiels Nutzungsstatistiken (Fortschritt, angesehene Werbung, Gerätetyp) an Unity Analytics sendet, verknüpft mit einer technischen Spielerkennung? Eine Ablehnung ändert nichts an Ihrem Spiel. Sie können diese Wahl jederzeit im Pause-Menü unter „Datenschutz“ ändern." },
             { "consent.current", "Ihre aktuelle Wahl: {0}." },
             { "consent.state.accepted", "akzeptiert" },
             { "consent.state.refused", "abgelehnt" },
@@ -1080,14 +1080,14 @@ namespace CatHotel.Core
         {
             // --- Consent / RGPD ---
             { "consent.title", "Privacidad y anuncios" },
-            { "consent.body", "Para apoyar el desarrollo del juego, Meowtel ofrece anuncios opcionales con recompensa. ¿Aceptas el uso de tu identificador publicitario para mostrar anuncios personalizados? Puedes cambiar esta elección en cualquier momento en el menú del juego, en «Privacidad»." },
+            { "consent.body", "Para apoyar el desarrollo del juego, Meowtel ofrece anuncios opcionales con recompensa. ¿Aceptas el uso de tu identificador publicitario para mostrar anuncios personalizados? Puedes cambiar esta elección en cualquier momento en el menú de pausa, en «Privacidad»." },
             { "consent.accept", "Aceptar" },
             { "consent.refuse", "Rechazar" },
             { "consent.analytics.title", "Estadísticas de uso" },
-            { "consent.analytics.body", "A Jasper le gustaría llevar el cuaderno de bitácora del hotel para mejorarlo. ¿Aceptas que Meowtel envíe a Unity Analytics estadísticas de uso (progreso, anuncios vistos, tipo de dispositivo), vinculadas a un identificador técnico y no a tu nombre? Rechazar no cambia nada en tu partida. Puedes cambiar esta elección en cualquier momento en el menú del juego, en «Privacidad»." },
+            { "consent.analytics.body", "Para mejorar el juego, ¿aceptas que Meowtel envíe a Unity Analytics estadísticas de uso (progreso, anuncios vistos, tipo de dispositivo), vinculadas a un identificador técnico de jugador? Rechazar no cambia nada en tu partida. Puedes cambiar esta elección en cualquier momento en el menú de pausa, en «Privacidad»." },
             { "consent.current", "Tu elección actual: {0}." },
-            { "consent.state.accepted", "aceptado" },
-            { "consent.state.refused", "rechazado" },
+            { "consent.state.accepted", "aceptada" },
+            { "consent.state.refused", "rechazada" },
             { "ui.privacy", "Privacidad" },
 
             // --- Cat Info Panel ---
@@ -1394,14 +1394,14 @@ namespace CatHotel.Core
         {
             // --- Consent / LGPD ---
             { "consent.title", "Privacidade e anúncios" },
-            { "consent.body", "Para apoiar o desenvolvimento do jogo, o Meowtel oferece anúncios opcionais com recompensa. Você aceita o uso do seu identificador de publicidade para exibir anúncios personalizados? Você pode alterar esta escolha a qualquer momento no menu do jogo, em “Privacidade”." },
+            { "consent.body", "Para apoiar o desenvolvimento do jogo, o Meowtel oferece anúncios opcionais com recompensa. Você aceita o uso do seu identificador de publicidade para exibir anúncios personalizados? Você pode alterar esta escolha a qualquer momento no menu de pausa, em “Privacidade”." },
             { "consent.accept", "Aceitar" },
             { "consent.refuse", "Recusar" },
             { "consent.analytics.title", "Estatísticas de uso" },
-            { "consent.analytics.body", "O Jasper gostaria de manter o diário de bordo do hotel para melhorá-lo. Você aceita que o Meowtel envie ao Unity Analytics estatísticas de uso (progresso, anúncios assistidos, tipo de aparelho), vinculadas a um identificador técnico e não ao seu nome? Recusar não muda nada no seu jogo. Você pode alterar esta escolha a qualquer momento no menu do jogo, em “Privacidade”." },
+            { "consent.analytics.body", "Para melhorar o jogo, você aceita que o Meowtel envie ao Unity Analytics estatísticas de uso (progresso, anúncios assistidos, tipo de aparelho), vinculadas a um identificador técnico de jogador? Recusar não muda nada no seu jogo. Você pode alterar esta escolha a qualquer momento no menu de pausa, em “Privacidade”." },
             { "consent.current", "Sua escolha atual: {0}." },
-            { "consent.state.accepted", "aceito" },
-            { "consent.state.refused", "recusado" },
+            { "consent.state.accepted", "aceita" },
+            { "consent.state.refused", "recusada" },
             { "ui.privacy", "Privacidade" },
 
             // --- Cat Info Panel ---

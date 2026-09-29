@@ -160,7 +160,11 @@ namespace CatHotel.UI
             }
             else
             {
+                bool wasGranted = ConsentManager.HasMadeAnalyticsChoice && ConsentManager.AnalyticsConsentGiven;
                 ConsentManager.SetAnalyticsConsent(accepted); // starts or stops collection immediately
+                // Withdrawal: also ask Unity to delete what was collected (right to erasure)
+                if (wasGranted && !accepted)
+                    GameAnalytics.RequestDataDeletion();
             }
             Close();
         }

@@ -442,7 +442,7 @@ namespace CatHotel.UI
         {
             if (_bonusCoins > 0) return false;
             var ads = AdManager.Instance;
-            if (ads == null || !ads.CanShowRewarded) return false;
+            if (ads == null || !ads.CanShowRewardedFor(CurrentPlacement)) return false;
             var tutorial = Tutorial.TutorialManager.Instance;
             return tutorial == null || !tutorial.IsActive;
         }
@@ -480,6 +480,10 @@ namespace CatHotel.UI
                 _animCoroutine = null;
             }
             SnapNumbersToFinal();
+
+            // Collect the base payout BEFORE the ad: if the OS kills the app during the ad,
+            // the cat and its payout must not be lost (the bonus is credited separately).
+            AutoCollect();
 
             _adInProgress = true;
             StopAutoCloseTimer(); // don't close while ad is playing

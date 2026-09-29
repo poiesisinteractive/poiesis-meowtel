@@ -249,15 +249,17 @@ namespace CatHotel.Tutorial
             // Release camera focus if any
             if (_cameraFocus != null) _cameraFocus.Release();
 
-            // Restore game state (skip can now happen during a highlight step)
-            RestoreGameUI();
-            ClearShopFilter();
-            UnfreezeAllCats();
+            // Restore game state (skip can now happen during a highlight step).
+            // Undo the highlight BEFORE RestoreGameUI, which re-enables the UI hidden by the tutorial
+            // (e.g. ShopAction is both hidden by DisableGameUI and shown for its highlight).
             RestoreDimmedHud();
             StopPulse();
             foreach (var go in _temporarilyEnabledForHighlight)
                 if (go != null) go.SetActive(false);
             _temporarilyEnabledForHighlight.Clear();
+            RestoreGameUI();
+            ClearShopFilter();
+            UnfreezeAllCats();
             UnsubscribeEvents();
 
             // Clean up tutorial-spawned cats that may still be frozen/idle

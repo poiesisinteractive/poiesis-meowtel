@@ -170,8 +170,11 @@ namespace CatHotel.Hotel
                 }
                 else
                 {
+                    // Nothing built yet: the only cats are the previous run's tutorial cats, which the
+                    // tutorial spawns again — drop them so they aren't duplicated.
                     Debug.Log("[Hotel] Tutorial was incomplete on quit — restarting it (save kept).");
                     prog.tutorialStepIndex = 0;
+                    prog.cats?.Clear();
                 }
             }
 
@@ -761,6 +764,7 @@ namespace CatHotel.Hotel
             // Calculate payment
             float happiness = cat.Happiness.Value;
             float avgHappiness = cat.AverageHappiness;
+            bool boosted = CurrentBoostMultiplier > 1f; // captured now: the boost may expire before collect
             float payment = _config.pensionBaseRate * cat.PensionDuration * (happiness / 100f)
                 * cat.Breed.revenueMultiplier * CurrentBoostMultiplier;
             int baseCoins = Mathf.RoundToInt(payment);
@@ -791,7 +795,7 @@ namespace CatHotel.Hotel
                 {
                     _economy.AddCoins(finalCoins);
                     GameAnalytics.PensionComplete(Mathf.RoundToInt(happiness), finalCoins, cat.IsSpecial,
-                        _reputation != null ? _reputation.Level : 0);
+                        _reputation != null ? _reputation.Level : 0, boosted);
 
                     _reputation.AwardPensionXp(happiness, cat.IsSpecial);
                     CatHotel.Audio.CatSoundManager.Instance?.PlayDeparture();
@@ -804,7 +808,7 @@ namespace CatHotel.Hotel
                 // Fallback if no panel
                 _economy.AddCoins(totalCoins);
                 GameAnalytics.PensionComplete(Mathf.RoundToInt(happiness), totalCoins, cat.IsSpecial,
-                    _reputation != null ? _reputation.Level : 0);
+                    _reputation != null ? _reputation.Level : 0, boosted);
                 _reputation.AwardPensionXp(happiness, cat.IsSpecial);
                 CatHotel.Audio.CatSoundManager.Instance?.PlayDeparture();
                 FinalizeDeparture(cat);
@@ -832,6 +836,9 @@ namespace CatHotel.Hotel
                 cat.HappyDuration = 0f;
                 return;
             }
+            // Not in the middle of a fight or a stair climb (the departure walk would be interrupted).
+            if (cat.Entity == null || cat.Entity.IsFighting || cat.Entity.IsChangingFloor)
+                return;
 
             if (cat.Happiness.Value >= _config.adoptionHappyThreshold)
                 cat.HappyDuration += dt;
@@ -871,6 +878,7 @@ namespace CatHotel.Hotel
         private void ShowAdoptionPanel(CatInstance cat)
         {
             float happiness = cat.Happiness != null ? cat.Happiness.Value : _config.adoptionHappyThreshold;
+            bool boosted = CurrentBoostMultiplier > 1f;
             float fee = cat.Breed.revenueMultiplier * _config.adoptionFeeMultiplier
                 * 100f * (happiness / 100f) * CurrentBoostMultiplier;
             int coins = Mathf.RoundToInt(fee);
@@ -878,7 +886,7 @@ namespace CatHotel.Hotel
             void Collect(int finalCoins)
             {
                 _economy.AddCoins(finalCoins);
-                GameAnalytics.AdoptionComplete(cat.Breed != null ? cat.Breed.name : null, finalCoins);
+                GameAnalytics.AdoptionComplete(cat.Breed != null ? cat.Breed.name : null, finalCoins, boosted);
                 _reputation.AwardAdoptionXp(happiness, cat.IsSpecial);
                 CatHotel.Audio.CatSoundManager.Instance?.PlayDeparture();
                 FinalizeDeparture(cat);
@@ -994,8 +1002,13 @@ namespace CatHotel.Hotel
         {
             int n = 0;
             foreach (var c in _cats)
+            {
+                // Cats on their way out (picked up, adopted, leaving) no longer count
+                if (c.State == CatState.Leaving || c.State == CatState.Pickup || c.State == CatState.Adopted)
+                    continue;
                 if (c.Happiness != null && c.Happiness.Value >= ReputationManager.HappyCatThreshold)
                     n++;
+            }
             return n;
         }
 

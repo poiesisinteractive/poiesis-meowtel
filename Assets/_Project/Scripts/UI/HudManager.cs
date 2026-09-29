@@ -386,7 +386,7 @@ namespace CatHotel.UI
             var ads = AdManager.Instance;
             var boost = RevenueBoostManager.Instance;
             if (ads == null) { Debug.LogWarning("[HUD] AddBoost click ignored: AdManager.Instance is null"); return; }
-            if (!ads.CanShowRewarded) { Debug.LogWarning("[HUD] AddBoost click ignored: no ad available"); return; }
+            if (!ads.CanShowRewardedFor(AdManager.PlacementBoostX2)) { Debug.LogWarning("[HUD] AddBoost click ignored: no ad available"); return; }
             if (boost != null && boost.IsBoosted) { Debug.LogWarning("[HUD] AddBoost click ignored: boost already active"); return; }
             if (IsTutorialActive) { Debug.LogWarning("[HUD] AddBoost click ignored: tutorial in progress"); return; }
 
@@ -446,7 +446,7 @@ namespace CatHotel.UI
             }
 
             // Boost availability: can the player trigger a new boost right now?
-            bool canWatch = ads != null && ads.CanShowRewarded
+            bool canWatch = ads != null && ads.CanShowRewardedFor(AdManager.PlacementBoostX2)
                 && (boost == null || !boost.IsBoosted)
                 && !IsTutorialActive; // no ads during the tutorial
 

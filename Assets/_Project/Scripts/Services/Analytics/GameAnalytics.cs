@@ -36,6 +36,8 @@ namespace CatHotel.Services
         private const string EvAdOfferShown = "ad_offer_shown";
         private const string EvAdRewardGranted = "ad_reward_granted";
 
+        private const string PendingDeletionKey = "Analytics_PendingDeletion";
+
         private static bool _servicesReady;
         private static bool _consentGranted;
         private static int _warnings;
@@ -110,6 +112,10 @@ namespace CatHotel.Services
             catch (Exception e) { Warn(nameof(NotifyServicesInitialized), e); }
 #endif
             DevLog.Log($"[Analytics] UGS ready, collecting={IsCollecting}");
+
+            // A deletion requested while offline / before init is replayed now.
+            if (!_consentGranted && PlayerPrefs.GetInt(PendingDeletionKey, 0) == 1)
+                RequestDataDeletion();
         }
 
 #if !ENABLE_UNITY_CONSENT
@@ -130,14 +136,32 @@ namespace CatHotel.Services
 #endif
 
         /// <summary>
-        /// Asks Unity to delete the data already collected for this player.
-        /// Only valid once consent is refused (the SDK throws while it is granted).
+        /// Asks Unity to delete the data already collected for this player (right to erasure),
+        /// called when the player withdraws analytics consent. Only valid once consent is refused
+        /// (the SDK throws while it is granted). Persisted and replayed if UGS is not ready yet.
         /// </summary>
         public static void RequestDataDeletion()
         {
-            if (_consentGranted || !ServicesReady) return;
-            try { AnalyticsService.Instance.RequestDataDeletion(); }
-            catch (Exception e) { Warn(nameof(RequestDataDeletion), e); }
+            if (_consentGranted) return;
+            if (!ServicesReady)
+            {
+                PlayerPrefs.SetInt(PendingDeletionKey, 1);
+                PlayerPrefs.Save();
+                return;
+            }
+            try
+            {
+                AnalyticsService.Instance.RequestDataDeletion();
+                PlayerPrefs.DeleteKey(PendingDeletionKey);
+                PlayerPrefs.Save();
+                DevLog.Log("[Analytics] data deletion requested");
+            }
+            catch (Exception e)
+            {
+                PlayerPrefs.SetInt(PendingDeletionKey, 1);
+                PlayerPrefs.Save();
+                Warn(nameof(RequestDataDeletion), e);
+            }
         }
 
         // ---------- Events ----------
@@ -170,8 +194,11 @@ namespace CatHotel.Services
             });
         }
 
-        /// <summary>coins = payment + tip, without the ×2 ad bonus (measured by ad_reward_granted).</summary>
-        public static void PensionComplete(int happiness, int coins, bool isSpecial, int level)
+        /// <summary>
+        /// coins = payment + tip, without the ×2 ad bonus (measured by ad_reward_granted);
+        /// is_boosted = the rewarded-ad revenue boost was active (coins already include it).
+        /// </summary>
+        public static void PensionComplete(int happiness, int coins, bool isSpecial, int level, bool isBoosted)
         {
             if (!Ready(EvPensionComplete)) return;
             Send(EvPensionComplete, new CustomEvent(EvPensionComplete)
@@ -179,7 +206,8 @@ namespace CatHotel.Services
                 { "happiness", happiness },
                 { "coins", coins },
                 { "is_special", isSpecial },
-                { "level", level }
+                { "level", level },
+                { "is_boosted", isBoosted }
             });
         }
 
@@ -193,14 +221,15 @@ namespace CatHotel.Services
             });
         }
 
-        /// <summary>fee = adoption fee credited, without the ×2 ad bonus.</summary>
-        public static void AdoptionComplete(string breed, int fee)
+        /// <summary>fee = adoption fee credited, without the ×2 ad bonus; is_boosted as in PensionComplete.</summary>
+        public static void AdoptionComplete(string breed, int fee, bool isBoosted)
         {
             if (!Ready(EvAdoptionComplete)) return;
             Send(EvAdoptionComplete, new CustomEvent(EvAdoptionComplete)
             {
                 { "breed", Safe(breed) },
-                { "fee", fee }
+                { "fee", fee },
+                { "is_boosted", isBoosted }
             });
         }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using CatHotel.Core;
 using Unity.Services.LevelPlay;
 
 namespace CatHotel.Services
@@ -47,8 +48,14 @@ namespace CatHotel.Services
         // LevelPlay does not guarantee the order of OnAdRewarded and OnAdClosed:
         // after a close without reward, wait this long for a late reward before failing.
         private const float LateRewardGraceSeconds = 3f;
-        // Safety net if the SDK never reports back (no close, no reward, no failure).
-        private const float RequestTimeoutSeconds = 180f;
+        // Safety net if the ad never shows (no display, no failure). Counted in FOREGROUND time only:
+        // while the ad (or the store it links to) is on screen Unity is paused and its callbacks wait
+        // in a queue, so wall-clock time would cancel rewards the player earned.
+        private const float RequestTimeoutSeconds = 90f;
+
+        // LevelPlay placement capping/pacing (dashboard), cached: the check is a call into Java.
+        private readonly Dictionary<string, (bool capped, float checkedAt)> _cappedCache = new();
+        private const float CappedCacheSeconds = 5f;
 
         // Daily tracking
         private int _adsWatchedToday;
@@ -63,6 +70,23 @@ namespace CatHotel.Services
         public bool HasReachedDailyCap => _config != null && _adsWatchedToday >= _config.dailyCap;
         /// <summary>True when a rewarded ad can be shown right now (loaded, under the daily cap, none in progress).</summary>
         public bool CanShowRewarded => IsAdReady && !HasReachedDailyCap && _request == null;
+
+        /// <summary>CanShowRewarded, and the placement is not capped/paced in the LevelPlay dashboard.</summary>
+        public bool CanShowRewardedFor(string placement) => CanShowRewarded && !IsPlacementCapped(placement);
+
+        private bool IsPlacementCapped(string placement)
+        {
+            if (string.IsNullOrEmpty(placement) || _config == null || _config.stubAdsForBeta) return false;
+            float now = Time.unscaledTime;
+            if (_cappedCache.TryGetValue(placement, out var entry) && now - entry.checkedAt < CappedCacheSeconds)
+                return entry.capped;
+
+            bool capped = false;
+            try { capped = LevelPlayRewardedAd.IsPlacementCapped(placement); }
+            catch (Exception e) { DevLog.Warn($"[Ads] IsPlacementCapped({placement}) failed: {e.Message}"); }
+            _cappedCache[placement] = (capped, now);
+            return capped;
+        }
         public bool IsShowingAd => _request != null;
         public int AdsWatchedToday => _adsWatchedToday;
         public int DailyCap => _config != null ? _config.dailyCap : 10;
@@ -129,14 +153,22 @@ namespace CatHotel.Services
         public void ApplyPrivacySettings()
         {
             bool consent = ConsentManager.ConsentGiven;
-            var networkConsents = new Dictionary<string, bool>
+            try
             {
-                { "UnityAds", consent },
-                { "IronSource", consent }
-            };
-            LevelPlayPrivacySettings.SetGDPRConsents(networkConsents);
-            LevelPlayPrivacySettings.SetCOPPA(false); // Meowtel n'est pas destine aux enfants
-            Debug.Log($"[Ads] GDPR consent applied: {(consent ? "accepted" : "refused")}");
+                var networkConsents = new Dictionary<string, bool>
+                {
+                    { "UnityAds", consent },
+                    { "IronSource", consent }
+                };
+                LevelPlayPrivacySettings.SetGDPRConsents(networkConsents);
+                LevelPlayPrivacySettings.SetCOPPA(false); // Meowtel n'est pas destine aux enfants
+                Debug.Log($"[Ads] GDPR consent applied: {(consent ? "accepted" : "refused")}");
+            }
+            catch (Exception e)
+            {
+                // Called from the consent popup: an SDK exception must never block the boot flow.
+                Debug.LogWarning($"[Ads] Could not apply privacy settings: {e.Message}");
+            }
         }
 
         private void StartInit()
@@ -229,6 +261,12 @@ namespace CatHotel.Services
                 ScheduleReload();
             };
 
+            _rewardedAd.OnAdDisplayed += info =>
+            {
+                // The ad is on screen: from now on, rely on OnAdClosed (+ grace) rather than the timeout.
+                if (_request != null) StopWatchdog();
+            };
+
             _rewardedAd.OnAdRewarded += (info, reward) =>
             {
                 Debug.Log($"[Ads] Reward received ({_request?.Placement ?? "no request"}): {reward.Name} x{reward.Amount}");
@@ -297,7 +335,7 @@ namespace CatHotel.Services
         /// </summary>
         public bool ShowRewarded(string placement, Action<bool> onComplete)
         {
-            if (!CanShowRewarded)
+            if (!CanShowRewardedFor(placement))
             {
                 Debug.LogWarning($"[Ads] Cannot show ad for {placement} — not ready, daily cap reached or ad in progress");
                 return false;
@@ -331,6 +369,7 @@ namespace CatHotel.Services
             _request.Rewarded = true;
 
             _adsWatchedToday++;
+            _cappedCache.Remove(_request.Placement); // its capping count just changed
             SaveDailyCount();
             GameAnalytics.AdRewardGranted(_request.Placement);
             CompleteRequest(true);
@@ -347,7 +386,7 @@ namespace CatHotel.Services
 
         private IEnumerator FailAfterGrace(RewardedRequest pending)
         {
-            yield return new WaitForSecondsRealtime(LateRewardGraceSeconds);
+            yield return ForegroundDelay(LateRewardGraceSeconds);
             _requestWatchdog = null;
             if (_request == pending && !pending.Rewarded)
             {
@@ -356,9 +395,23 @@ namespace CatHotel.Services
             }
         }
 
+        /// <summary>
+        /// Waits for the given amount of foreground time: each frame counts for at most 0.5 s, so the
+        /// time spent paused (ad activity, store, background) does not count.
+        /// </summary>
+        private static IEnumerator ForegroundDelay(float seconds)
+        {
+            float elapsed = 0f;
+            while (elapsed < seconds)
+            {
+                elapsed += Mathf.Min(Time.unscaledDeltaTime, 0.5f);
+                yield return null;
+            }
+        }
+
         private IEnumerator RequestTimeout(RewardedRequest pending)
         {
-            yield return new WaitForSecondsRealtime(RequestTimeoutSeconds);
+            yield return ForegroundDelay(RequestTimeoutSeconds);
             _requestWatchdog = null;
             if (_request == pending)
             {
