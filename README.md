@@ -37,6 +37,11 @@ Assets/
 ├── _Project/
 │   ├── Scripts/        # code du jeu, namespaces CatHotel.*
 │   │   ├── Boot/       # démarrage, menu principal
+│   │   ├── Core/       # données et utilitaires : GameConfig, LocalizedStrings, SaveManager, BreedRegistry
+│   │   ├── Grid/       # grille, pièces, rendu des sols et des murs (GridRenderer)
+│   │   ├── Input/      # caméra, saisie de construction
+│   │   ├── Audio/      # sons des chats et de l'UI, musique
+│   │   ├── Shop/       # articles de boutique (ShopItemData)
 │   │   ├── Hotel/      # simulation : HotelManager, réputation, étages, placement d'objets
 │   │   ├── Cats/       # IA et état des chats : besoins, bonheur, affinités
 │   │   ├── Economy/    # pièces, monnaie premium (Puurls), pièces flottantes
@@ -57,7 +62,10 @@ CloudCode/              # modules Cloud Code (vides pour l'instant)
 ## Outils éditeur
 
 Menu **Cat Hotel** : configuration des Addressables, banques de sons, prefab de l'écran de chargement,
-assets du tutoriel, optimisation des textures, testeur de sons.
+assets du tutoriel, configuration du déblocage des étages, zone de sécurité (*safe area*),
+correction d'import des sprites de léchage, optimisation des textures, testeur de sons, débogage
+(tentative de déblocage de l'étage suivant en Play Mode, soumise aux conditions de réputation et de pièces)
+et fenêtre d'aide.
 
 > ⚠️ **Ne pas lancer `Cat Hotel/Scene/Setup Proto Scene`.** Ce script reconstruit `Proto.unity` de zéro
 > et écraserait toutes les retouches faites à la main depuis sa dernière exécution.
@@ -77,8 +85,9 @@ assets du tutoriel, optimisation des textures, testeur de sons.
 
 1. Incrémenter `bundleVersion` et `versionCode` (*Player Settings > Other Settings*).
 2. Vérifier le niveau d'API cible exigé par Google Play au moment de l'envoi.
-3. Addressables : le réglage suit la préférence globale de l'éditeur ; si la construction
-   automatique est désactivée, construire les Addressables avant le build.
+3. Addressables : le projet est réglé pour **ne pas** les construire avec le build
+   (*Build Addressables on Player Build* = *Do not Build Addressables content on Player build*) ;
+   les construire avant chaque build (*Window > Asset Management > Addressables > Groups > Build > New Build > Default Build Script*).
 4. *File > Build Profiles > Android*, format **App Bundle (AAB)**, signé avec la clé d'upload.
    Les fichiers de signature et les identifiants de service ne doivent pas être versionnés.
 5. Envoyer l'AAB sur la piste de **test interne**, vérifier sur un appareil, puis promouvoir en production.
