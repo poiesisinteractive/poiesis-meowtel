@@ -20,11 +20,11 @@ namespace CatHotel.Services
         public float boostMultiplier = 2f;
 
         [Tooltip("Duree du boost en secondes")]
-        public float boostDuration = 60f;
+        public float boostDuration = 300f;
 
         [Header("Daily Cap")]
         [Tooltip("Nombre max de rewarded ads par jour")]
-        public int dailyCap = 10;
+        public int dailyCap = 30;
 
         [Header("Debug")]
         [Tooltip("Active le mode test (pas de vraies pubs, pas de revenu)")]

@@ -188,11 +188,7 @@ namespace CatHotel.Hotel
             // Hook into ads (already initialized by Boot, or init here as fallback)
             var adManager = AdManager.Instance ?? FindAnyObjectByType<AdManager>();
             if (adManager != null)
-            {
-                adManager.OnAdCompleted += OnRewardedAdCompleted;
-                if (!adManager.IsAdReady)
-                    adManager.InitializeAds(); // fallback if Boot didn't run
-            }
+                adManager.InitializeAds(); // idempotent: fallback if Boot didn't run
 
             // Wait one frame for GridRenderer.Start() to build the room and entrances
             yield return null;
@@ -268,6 +264,10 @@ namespace CatHotel.Hotel
             }
         }
 
+        /// <summary>Rewarded-ad revenue boost (×2 while active) — applies to every coin income.</summary>
+        private static float CurrentBoostMultiplier =>
+            RevenueBoostManager.Instance != null ? RevenueBoostManager.Instance.BoostMultiplier : 1f;
+
         private void TickPassiveIncome()
         {
             if (_economy == null || _gridRenderer == null) return;
@@ -281,7 +281,7 @@ namespace CatHotel.Hotel
                 // Happier hidden cats earn more; unhappy ones still trickle a small amount.
                 total += PassiveIncomePerCat * (happiness / 100f);
             }
-            int coins = Mathf.RoundToInt(total);
+            int coins = Mathf.RoundToInt(total * CurrentBoostMultiplier);
             if (coins > 0)
             {
                 _economy.AddCoins(coins);
@@ -737,7 +737,7 @@ namespace CatHotel.Hotel
             float happiness = cat.Happiness.Value;
             float avgHappiness = cat.AverageHappiness;
             float payment = _config.pensionBaseRate * cat.PensionDuration * (happiness / 100f)
-                * cat.Breed.revenueMultiplier;
+                * cat.Breed.revenueMultiplier * CurrentBoostMultiplier;
             int baseCoins = Mathf.RoundToInt(payment);
 
             int tipCoins = 0;
@@ -878,12 +878,6 @@ namespace CatHotel.Hotel
 
             // Auto-save after departure
             SaveProgression();
-        }
-
-        private void OnRewardedAdCompleted()
-        {
-            if (RevenueBoostManager.Instance != null)
-                RevenueBoostManager.Instance.ActivateBoost();
         }
 
         /// <summary>Get average happiness across all cats.</summary>

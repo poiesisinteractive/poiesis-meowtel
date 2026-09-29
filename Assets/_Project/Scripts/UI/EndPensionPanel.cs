@@ -64,6 +64,9 @@ namespace CatHotel.UI
         private int _bonusCoins;
         private Coroutine _animCoroutine;
         private Coroutine _autoCloseCoroutine;
+        private int _sessionId;          // incremented per recap shown (ad callbacks may outlive a recap)
+        private bool _offerTracked;      // analytics: x2 offer recorded for this recap
+        private AdManager _adsSubscribed; // AdManager whose availability event we listen to
 
         // Queue for multiple pension ends
         private readonly Queue<(PensionEndData data, Action<int> onCollect)> _pendingQueue = new();
@@ -86,6 +89,11 @@ namespace CatHotel.UI
                 _sfxSource.playOnAwake = false;
                 _sfxSource.spatialBlend = 0f;
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (_adsSubscribed != null) _adsSubscribed.OnAdAvailabilityChanged -= OnAdAvailabilityChanged;
         }
 
         private void CacheReferences()
@@ -190,6 +198,9 @@ namespace CatHotel.UI
             _bonusCoins = 0;
             _adInProgress = false;
             _panelReady = false;
+            _sessionId++;
+            _offerTracked = false;
+            SubscribeToAds();
 
             UISoundManager.Instance?.PlayOpenSection();
             _panelObj.SetActive(true);
@@ -215,14 +226,8 @@ namespace CatHotel.UI
             if (_byeLabel != null)
                 _byeLabel.text = Core.LocalizedStrings.Get("pension.bye", data.CatName);
 
-            if (_doubleRect != null)
-            {
-                _doubleRect.gameObject.SetActive(true);
-                if (_doubleRect.gameObject.activeSelf)
-                    GameAnalytics.AdOfferShown(AdManager.PlacementPensionX2);
-            }
-
             _isOpen = true;
+            RefreshDoubleButton();
 
             // Slide in to rest position
             _slideTween?.Kill();
@@ -383,14 +388,54 @@ namespace CatHotel.UI
             text.text = format(to);
         }
 
+        // ---------- x2 rewarded ad ----------
+
+        private void SubscribeToAds()
+        {
+            var ads = AdManager.Instance;
+            if (ads == null || ads == _adsSubscribed) return;
+            if (_adsSubscribed != null) _adsSubscribed.OnAdAvailabilityChanged -= OnAdAvailabilityChanged;
+            ads.OnAdAvailabilityChanged += OnAdAvailabilityChanged;
+            _adsSubscribed = ads;
+        }
+
+        private void OnAdAvailabilityChanged()
+        {
+            if (_isOpen && !_adInProgress) RefreshDoubleButton();
+        }
+
+        /// <summary>x2 is only offered when an ad can really be shown, outside the tutorial, once per recap.</summary>
+        private bool CanOfferDouble()
+        {
+            if (_bonusCoins > 0) return false;
+            var ads = AdManager.Instance;
+            if (ads == null || !ads.CanShowRewarded) return false;
+            var tutorial = Tutorial.TutorialManager.Instance;
+            return tutorial == null || !tutorial.IsActive;
+        }
+
+        private void RefreshDoubleButton()
+        {
+            if (_doubleRect == null) return;
+            bool offer = CanOfferDouble();
+            if (_doubleRect.gameObject.activeSelf != offer)
+                _doubleRect.gameObject.SetActive(offer);
+            if (offer && !_offerTracked)
+            {
+                _offerTracked = true;
+                GameAnalytics.AdOfferShown(AdManager.PlacementPensionX2);
+            }
+        }
+
         private void TryDoubleGains()
         {
             if (!_isOpen || !_panelReady || _adInProgress) return;
 
             var ads = AdManager.Instance;
-            if (ads == null || !ads.IsAdReady)
+            if (!CanOfferDouble())
             {
-                Debug.LogWarning("[Pension] Ad not ready");
+                Debug.LogWarning("[Pension] Ad not available");
+                RefreshDoubleButton();
                 return;
             }
 
@@ -406,9 +451,16 @@ namespace CatHotel.UI
             _adInProgress = true;
             StopAutoCloseTimer(); // don't close while ad is playing
 
-            ads.OnPensionAdCompleted += OnPensionAdSuccess;
-            ads.OnPensionAdFailed += OnPensionAdFail;
-            ads.ShowPensionAd();
+            int session = _sessionId;
+            int bonus = _data.TotalCoins;
+            bool shown = ads.ShowRewarded(AdManager.PlacementPensionX2,
+                rewarded => OnPensionAdResult(session, bonus, rewarded));
+            if (!shown)
+            {
+                _adInProgress = false;
+                StartAutoCloseTimer();
+                RefreshDoubleButton();
+            }
         }
 
         private void SnapNumbersToFinal()
@@ -420,12 +472,29 @@ namespace CatHotel.UI
             if (_totalValue != null) _totalValue.text = $"{_data.TotalCoins:0}";
         }
 
-        private void OnPensionAdSuccess()
+        /// <summary>Called exactly once per x2 request by AdManager.</summary>
+        private void OnPensionAdResult(int session, int bonus, bool rewarded)
         {
-            UnsubPensionAd();
+            if (rewarded)
+            {
+                // Always credit the reward, even if this recap is no longer the one on screen.
+                var economy = GetComponent<CatHotel.Economy.EconomyManager>();
+                if (economy != null)
+                    economy.AddCoins(bonus);
+                Debug.Log($"[Pension] x2 bonus: +{bonus} coins");
+            }
+
+            if (session != _sessionId || !_isOpen) return; // recap already closed / replaced
             _adInProgress = false;
 
-            _bonusCoins = _data.TotalCoins;
+            if (!rewarded)
+            {
+                Debug.LogWarning("[Pension] Ad not completed — no bonus");
+                Close();
+                return;
+            }
+
+            _bonusCoins = bonus;
             int newTotal = _data.TotalCoins + _bonusCoins;
 
             if (_totalValue != null)
@@ -443,38 +512,14 @@ namespace CatHotel.UI
             if (_doubleRect != null)
                 _doubleRect.gameObject.SetActive(false);
 
-            var economy = GetComponent<CatHotel.Economy.EconomyManager>();
-            if (economy != null)
-                economy.AddCoins(_bonusCoins);
-
             if (_sfxSource != null && _collectSfx != null)
                 _sfxSource.PlayOneShot(_collectSfx, ParametersPanel.EffectsVolume);
 
             int flyCoinCount = Mathf.Clamp(_bonusCoins / 10, 2, 6);
             StartCoroutine(CoinFlyFromTotal(flyCoinCount));
 
-            Debug.Log($"[Pension] x2 bonus: +{_bonusCoins} coins (total shown: {newTotal})");
-
             // Close immediately after ad return
             Close();
-        }
-
-        private void OnPensionAdFail()
-        {
-            UnsubPensionAd();
-            _adInProgress = false;
-            Debug.LogWarning("[Pension] Ad failed");
-
-            // Close on ad failure too
-            Close();
-        }
-
-        private void UnsubPensionAd()
-        {
-            var ads = AdManager.Instance;
-            if (ads == null) return;
-            ads.OnPensionAdCompleted -= OnPensionAdSuccess;
-            ads.OnPensionAdFailed -= OnPensionAdFail;
         }
 
         private IEnumerator CoinFlyFromTotal(int count)
