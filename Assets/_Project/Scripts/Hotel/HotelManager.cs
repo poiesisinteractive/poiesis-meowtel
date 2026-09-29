@@ -276,7 +276,8 @@ namespace CatHotel.Hotel
             foreach (var cat in _cats)
             {
                 if (cat.Entity == null || cat.Entity.FloorIndex == visibleFloor) continue;
-                if (cat.State == CatState.Leaving || cat.State == CatState.Pickup) continue;
+                if (cat.State == CatState.Leaving || cat.State == CatState.Pickup
+                    || cat.State == CatState.Adopted) continue;
                 float happiness = cat.Happiness != null ? cat.Happiness.Value : 50f;
                 // Happier hidden cats earn more; unhappy ones still trickle a small amount.
                 total += PassiveIncomePerCat * (happiness / 100f);
@@ -471,12 +472,19 @@ namespace CatHotel.Hotel
                     cat.HappinessSamples++;
                 }
 
-                // Departure check (skip cats already leaving, being picked up, or still arriving)
+                // Departure check (skip cats already leaving, being picked up/adopted, or still arriving)
                 if (cat.Happiness != null && cat.Happiness.ShouldLeave
                     && cat.State != CatState.Leaving && cat.State != CatState.Pickup
-                    && cat.State != CatState.Arriving)
+                    && cat.State != CatState.Adopted && cat.State != CatState.Arriving)
                 {
                     StartUnhappyDeparture(cat);
+                    continue;
+                }
+
+                // Refuge: an adopter comes after a continuous happy period
+                if (cat.Mode == CatMode.Refuge)
+                {
+                    UpdateAdoption(cat, dt);
                     continue;
                 }
 
@@ -786,20 +794,100 @@ namespace CatHotel.Hotel
             }
         }
 
-        /// <summary>Process adoption for a refuge cat (called when adopter arrives).</summary>
+        // ========== ADOPTION (refuge) ==========
+
+        private bool IsTutorialRunning =>
+            Tutorial.TutorialManager.Instance != null && Tutorial.TutorialManager.Instance.IsActive;
+
+        /// <summary>
+        /// Accumulates the continuous happy time of a refuge cat; once it reaches
+        /// adoptionHappyDuration an adopter takes the cat (GDD 3.10).
+        /// </summary>
+        private void UpdateAdoption(CatInstance cat, float dt)
+        {
+            if (cat.State == CatState.Leaving || cat.State == CatState.Pickup
+                || cat.State == CatState.Adopted || cat.State == CatState.Arriving)
+                return;
+
+            // The tutorial drives its own refuge cat: no adoption until it is over.
+            if (IsTutorialRunning || cat.Happiness == null)
+            {
+                cat.HappyDuration = 0f;
+                return;
+            }
+
+            if (cat.Happiness.Value >= _config.adoptionHappyThreshold)
+                cat.HappyDuration += dt;
+            else
+                cat.HappyDuration = 0f;
+
+            if (cat.HappyDuration >= _config.adoptionHappyDuration)
+                ProcessAdoption(cat);
+        }
+
+        /// <summary>
+        /// An adopter takes a refuge cat: the cat walks out through the refuge entrance, then the
+        /// adoption recap shows the fee (x2 via rewarded ad). Coins, XP and the departure are
+        /// finalized when the recap collects.
+        /// </summary>
         public void ProcessAdoption(CatInstance cat)
         {
-            if (cat.Mode != CatMode.Refuge) return;
+            if (cat == null || cat.Mode != CatMode.Refuge) return;
+            if (cat.State == CatState.Leaving || cat.State == CatState.Pickup || cat.State == CatState.Adopted)
+                return;
 
+            cat.State = CatState.Adopted;
+            cat.Entity.SetDeparting();
+
+            // Frozen-floor cats: skip the walk so the player still gets the reward.
+            int visibleFloor = _gridRenderer != null ? _gridRenderer.CurrentFloor : 0;
+            if (cat.Entity.FloorIndex != visibleFloor)
+            {
+                ShowAdoptionPanel(cat);
+                return;
+            }
+
+            // Adopted cats leave via the refuge entrance (bottom-left, no door animation)
+            cat.Entity.WalkToTarget(_gridRenderer.RefugeEntrance, () => ShowAdoptionPanel(cat));
+        }
+
+        private void ShowAdoptionPanel(CatInstance cat)
+        {
+            float happiness = cat.Happiness != null ? cat.Happiness.Value : _config.adoptionHappyThreshold;
             float fee = cat.Breed.revenueMultiplier * _config.adoptionFeeMultiplier
-                * 100f * (cat.Happiness.Value / 100f);
+                * 100f * (happiness / 100f) * CurrentBoostMultiplier;
             int coins = Mathf.RoundToInt(fee);
-            _economy.AddCoins(coins);
 
-            // Award XP for completed adoption
-            _reputation.AwardAdoptionXp(cat.Happiness.Value, cat.IsSpecial);
+            void Collect(int finalCoins)
+            {
+                _economy.AddCoins(finalCoins);
+                GameAnalytics.AdoptionComplete(cat.Breed != null ? cat.Breed.name : null, finalCoins);
+                _reputation.AwardAdoptionXp(happiness, cat.IsSpecial);
+                CatHotel.Audio.CatSoundManager.Instance?.PlayDeparture();
+                FinalizeDeparture(cat);
+            }
 
-            StartCatDeparture(cat, CatState.Adopted);
+            Sprite frontSprite = cat.IsSpecial && cat.Breed.specialFrontSprite != null
+                ? cat.Breed.specialFrontSprite : cat.Breed.frontSprite;
+
+            var panel = GetComponent<EndPensionPanel>();
+            if (panel != null)
+            {
+                panel.Show(new PensionEndData
+                {
+                    CatSprite = frontSprite,
+                    CatName = cat.CatName,
+                    AvgHappiness = happiness,
+                    BaseCoins = coins,
+                    TipCoins = 0,
+                    TotalCoins = coins,
+                    IsAdoption = true
+                }, Collect);
+            }
+            else
+            {
+                Collect(coins);
+            }
         }
 
         /// <summary>Unhappy cat leaves via right exit with sad walk + door animation.</summary>
@@ -832,24 +920,6 @@ namespace CatHotel.Hotel
                 if (exitDoor != null) exitDoor.PlayOpenClose();
                 FinalizeDeparture(cat);
             });
-        }
-
-        private void StartCatDeparture(CatInstance cat, CatState reason)
-        {
-            cat.State = reason;
-            cat.Entity.SetDeparting();
-            CatHotel.Audio.CatSoundManager.Instance?.PlayDeparture();
-
-            // Frozen-floor cats: skip walk, finalize immediately so the player still gets the reward.
-            int visibleFloor = _gridRenderer != null ? _gridRenderer.CurrentFloor : 0;
-            if (cat.Entity.FloorIndex != visibleFloor)
-            {
-                FinalizeDeparture(cat);
-                return;
-            }
-
-            // Adopted/refuge cats leave via bottom-left entrance (no door animation)
-            cat.Entity.WalkToTarget(_gridRenderer.RefugeEntrance, () => FinalizeDeparture(cat));
         }
 
         /// <summary>Immediately remove a cat from the game (used by tutorial to despawn the first cat).</summary>

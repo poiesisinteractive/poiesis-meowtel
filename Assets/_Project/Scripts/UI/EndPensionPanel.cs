@@ -19,6 +19,7 @@ namespace CatHotel.UI
         public int BaseCoins;
         public int TipCoins;
         public int TotalCoins;
+        public bool IsAdoption; // refuge adoption recap (fee) instead of a pension stay recap
     }
 
     /// <summary>
@@ -52,6 +53,11 @@ namespace CatHotel.UI
         private RectTransform _byeRect;
         private TMP_Text _byeLabel;
         private RectTransform _doubleRect;
+        // Static labels swapped for the adoption variant (localized by SceneTextLocalizer by default)
+        private TMP_Text _titleLabel;
+        private TMP_Text _happinessLabel;
+        private TMP_Text _baseLabel;
+        private TMP_Text _tipLabel;
 
         // Coin fly
         private RectTransform _coinTarget;
@@ -122,6 +128,10 @@ namespace CatHotel.UI
             _byeRect = FindRect(_panelObj, "ByeAction");
             _byeLabel = FindTMP(_panelObj, "ByeLabel");
             _doubleRect = FindRect(_panelObj, "X2GainCollectRewardedAdAction");
+            _titleLabel = FindTMP(_panelObj, "EnPensionLabel");
+            _happinessLabel = FindTMP(_panelObj, "HapinessLabel");
+            _baseLabel = FindTMP(_panelObj, "BaseLabel");
+            _tipLabel = FindTMP(_panelObj, "TipLabel");
 
             AddJuice(_byeRect);
             AddJuice(_doubleRect);
@@ -223,8 +233,7 @@ namespace CatHotel.UI
             if (_tipValue != null) _tipValue.text = "0";
             if (_totalValue != null) _totalValue.text = "0";
 
-            if (_byeLabel != null)
-                _byeLabel.text = Core.LocalizedStrings.Get("pension.bye", data.CatName);
+            ApplyVariantTexts(data);
 
             _isOpen = true;
             RefreshDoubleButton();
@@ -388,6 +397,30 @@ namespace CatHotel.UI
             text.text = format(to);
         }
 
+        /// <summary>Pension or adoption wording on the shared recap panel.</summary>
+        private void ApplyVariantTexts(PensionEndData data)
+        {
+            bool adoption = data.IsAdoption;
+            if (_titleLabel != null)
+                _titleLabel.text = Core.LocalizedStrings.Get(adoption ? "adoption.title" : "pension.title");
+            if (_happinessLabel != null)
+                _happinessLabel.text = Core.LocalizedStrings.Get(adoption ? "adoption.happiness" : "pension.happiness");
+            if (_baseLabel != null)
+                _baseLabel.text = Core.LocalizedStrings.Get(adoption ? "adoption.fee" : "pension.base");
+            // No tip on adoptions: hide the tip row
+            if (_tipLabel != null)
+            {
+                _tipLabel.text = Core.LocalizedStrings.Get("pension.tip");
+                _tipLabel.gameObject.SetActive(!adoption);
+            }
+            if (_tipValue != null) _tipValue.gameObject.SetActive(!adoption);
+            if (_byeLabel != null)
+                _byeLabel.text = Core.LocalizedStrings.Get(adoption ? "adoption.bye" : "pension.bye", data.CatName);
+        }
+
+        private string CurrentPlacement =>
+            _data.IsAdoption ? AdManager.PlacementAdoptionX2 : AdManager.PlacementPensionX2;
+
         // ---------- x2 rewarded ad ----------
 
         private void SubscribeToAds()
@@ -423,7 +456,7 @@ namespace CatHotel.UI
             if (offer && !_offerTracked)
             {
                 _offerTracked = true;
-                GameAnalytics.AdOfferShown(AdManager.PlacementPensionX2);
+                GameAnalytics.AdOfferShown(CurrentPlacement);
             }
         }
 
@@ -453,7 +486,7 @@ namespace CatHotel.UI
 
             int session = _sessionId;
             int bonus = _data.TotalCoins;
-            bool shown = ads.ShowRewarded(AdManager.PlacementPensionX2,
+            bool shown = ads.ShowRewarded(CurrentPlacement,
                 rewarded => OnPensionAdResult(session, bonus, rewarded));
             if (!shown)
             {

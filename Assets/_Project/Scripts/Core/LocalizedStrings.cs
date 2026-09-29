@@ -151,6 +151,10 @@ namespace CatHotel.Core
 
             // --- End Pension Panel ---
             { "pension.bye", "Au revoir {0} !" },
+            { "adoption.title", "Adoption réussie !" },
+            { "adoption.happiness", "Bonheur au moment de l'adoption :" },
+            { "adoption.fee", "Frais d'adoption" },
+            { "adoption.bye", "Bonne vie {0} !" },
 
             // --- Loading ---
             { "ui.loading", "Chargement" },
@@ -459,6 +463,10 @@ namespace CatHotel.Core
 
             // --- End Pension Panel ---
             { "pension.bye", "Goodbye {0}!" },
+            { "adoption.title", "Adoption complete!" },
+            { "adoption.happiness", "Happiness at adoption:" },
+            { "adoption.fee", "Adoption fee" },
+            { "adoption.bye", "Have a happy life, {0}!" },
 
             // --- Loading ---
             { "ui.loading", "Loading" },
@@ -767,6 +775,10 @@ namespace CatHotel.Core
 
             // --- End Pension Panel ---
             { "pension.bye", "Auf Wiedersehen {0}!" },
+            { "adoption.title", "Adoption erfolgreich!" },
+            { "adoption.happiness", "Glück bei der Adoption:" },
+            { "adoption.fee", "Adoptionsgebühr" },
+            { "adoption.bye", "Alles Gute, {0}!" },
 
             // --- Loading ---
             { "ui.loading", "Lädt" },
@@ -1073,6 +1085,10 @@ namespace CatHotel.Core
 
             // --- End Pension Panel ---
             { "pension.bye", "¡Adiós {0}!" },
+            { "adoption.title", "¡Adopción completada!" },
+            { "adoption.happiness", "Felicidad al ser adoptado:" },
+            { "adoption.fee", "Tasa de adopción" },
+            { "adoption.bye", "¡Que seas muy feliz, {0}!" },
 
             // --- Loading ---
             { "ui.loading", "Cargando" },
@@ -1379,6 +1395,10 @@ namespace CatHotel.Core
 
             // --- End Pension Panel ---
             { "pension.bye", "Tchau {0}!" },
+            { "adoption.title", "Adoção concluída!" },
+            { "adoption.happiness", "Felicidade na adoção:" },
+            { "adoption.fee", "Taxa de adoção" },
+            { "adoption.bye", "Seja muito feliz, {0}!" },
 
             // --- Loading ---
             { "ui.loading", "Carregando" },
