@@ -80,6 +80,11 @@ namespace CatHotel.Hotel
         public GameConfig Config => _config;
         public EconomyManager Economy => _economy;
         public ReputationManager Reputation => _reputation;
+
+        // Active play time in the hotel (saved), for analytics
+        private int _playTimeSeconds;
+        private float _playTimeFraction;
+        public int PlayTimeSeconds => _playTimeSeconds;
         public int CatCount => _cats.Count;
         public float ArrivalTimer => _arrivalTimer;
 
@@ -89,6 +94,7 @@ namespace CatHotel.Hotel
         private void OnDestroy()
         {
             LocalizedStrings.OnLanguageChanged -= RefreshDescriptions;
+            if (_reputation != null) _reputation.OnLevelChanged -= OnReputationLevelUp;
             _breedRegistry?.UnloadAll();
         }
 
@@ -174,7 +180,10 @@ namespace CatHotel.Hotel
                     _reputation.Init(savedProg.reputationLevel, savedProg.reputationXp);
                 else
                     _reputation.Init(0, 0);
+                // Init() never raises OnLevelChanged, so loading a save doesn't emit level_up
+                _reputation.OnLevelChanged += OnReputationLevelUp;
             }
+            _playTimeSeconds = savedProg != null ? Mathf.Max(0, savedProg.playTimeSeconds) : 0;
 
             // Hook into ads (already initialized by Boot, or init here as fallback)
             var adManager = AdManager.Instance ?? FindAnyObjectByType<AdManager>();
@@ -220,6 +229,15 @@ namespace CatHotel.Hotel
         private void Update()
         {
             if (_config == null) return;
+
+            // Scaled time: 0 while paused (timeScale 0), capped per frame, so background time is excluded
+            _playTimeFraction += Time.deltaTime;
+            if (_playTimeFraction >= 1f)
+            {
+                int whole = (int)_playTimeFraction;
+                _playTimeSeconds += whole;
+                _playTimeFraction -= whole;
+            }
 
             UpdateArrivals();
 
@@ -747,6 +765,8 @@ namespace CatHotel.Hotel
                 }, (finalCoins) =>
                 {
                     _economy.AddCoins(finalCoins);
+                    GameAnalytics.PensionComplete(Mathf.RoundToInt(happiness), finalCoins, cat.IsSpecial,
+                        _reputation != null ? _reputation.Level : 0);
 
                     _reputation.AwardPensionXp(happiness, cat.IsSpecial);
                     CatHotel.Audio.CatSoundManager.Instance?.PlayDeparture();
@@ -758,6 +778,8 @@ namespace CatHotel.Hotel
             {
                 // Fallback if no panel
                 _economy.AddCoins(totalCoins);
+                GameAnalytics.PensionComplete(Mathf.RoundToInt(happiness), totalCoins, cat.IsSpecial,
+                    _reputation != null ? _reputation.Level : 0);
                 _reputation.AwardPensionXp(happiness, cat.IsSpecial);
                 CatHotel.Audio.CatSoundManager.Instance?.PlayDeparture();
                 FinalizeDeparture(cat);
@@ -783,6 +805,9 @@ namespace CatHotel.Hotel
         /// <summary>Unhappy cat leaves via right exit with sad walk + door animation.</summary>
         private void StartUnhappyDeparture(CatInstance cat)
         {
+            // Asset name (e.g. Breed_Europeen2): unique per variant, unlike breedName
+            GameAnalytics.CatLeftUnhappy(cat.Breed != null ? cat.Breed.name : null,
+                _reputation != null ? _reputation.Level : 0);
             cat.State = CatState.Leaving;
             cat.Entity.SetDeparting();
             cat.Entity.SetSadWalk();
@@ -893,6 +918,11 @@ namespace CatHotel.Hotel
             return n;
         }
 
+        private void OnReputationLevelUp(int newLevel)
+        {
+            GameAnalytics.LevelUp(newLevel, _playTimeSeconds / 60);
+        }
+
         // ========== CLOUD SAVE INTEGRATION ==========
 
         /// <summary>Collect current progression data for saving.</summary>
@@ -911,6 +941,7 @@ namespace CatHotel.Hotel
                 // Preserve tutorial state — these are written by TutorialManager, not by hotel state
                 tutorialStepIndex = prev?.tutorialStepIndex ?? 0,
                 tutorialComplete  = prev?.tutorialComplete ?? false,
+                playTimeSeconds = _playTimeSeconds,
                 placedObjects = new List<PlacedObjectSaveData>(),
                 cats = new List<CatCloudSaveData>()
             };

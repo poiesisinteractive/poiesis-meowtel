@@ -11,6 +11,17 @@ namespace CatHotel.Services
     {
         public static AdManager Instance { get; private set; }
 
+        // LevelPlay placement names (also the analytics 'placement' parameter)
+        public const string PlacementBoostX2 = "BoostX2";
+        public const string PlacementPensionX2 = "X2Pension";
+
+        private static string PlacementFor(AdRewardType type) => type switch
+        {
+            AdRewardType.BoostX2 => PlacementBoostX2,
+            AdRewardType.PensionX2 => PlacementPensionX2,
+            _ => null
+        };
+
         [SerializeField] private AdConfig _config;
 
         private LevelPlayRewardedAd _rewardedAd;
@@ -149,6 +160,8 @@ namespace CatHotel.Services
                 Debug.Log($"[Ads] Reward granted ({_pendingReward}): {reward.Name} x{reward.Amount}");
                 _adsWatchedToday++;
                 SaveDailyCount();
+                var placement = PlacementFor(_pendingReward);
+                if (placement != null) GameAnalytics.AdRewardGranted(placement);
 
                 switch (_pendingReward)
                 {
@@ -243,7 +256,7 @@ namespace CatHotel.Services
             }
 
             Debug.Log("[Ads] Showing BOOST rewarded ad...");
-            _rewardedAd.ShowAd("BoostX2");
+            _rewardedAd.ShowAd(PlacementBoostX2);
             return true;
         }
 
@@ -268,7 +281,7 @@ namespace CatHotel.Services
             }
 
             Debug.Log("[Ads] Showing PENSION rewarded ad...");
-            _rewardedAd.ShowAd("X2Pension");
+            _rewardedAd.ShowAd(PlacementPensionX2);
             return true;
         }
 
@@ -278,6 +291,8 @@ namespace CatHotel.Services
 
             _adsWatchedToday++;
             SaveDailyCount();
+            var placement = PlacementFor(_pendingReward);
+            if (placement != null) GameAnalytics.AdRewardGranted(placement);
 
             switch (_pendingReward)
             {

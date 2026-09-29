@@ -56,6 +56,7 @@ namespace CatHotel.UI
         private TMP_Text _remainingAds;
         private TMP_Text _doubleGainsLabel;
         private GameObject _doubleGainLockObj;
+        private bool _boostOfferAvailable; // analytics: last known boost availability
         private RectTransform _starRt;
         private GameObject _x2BoostActiveObj;
         private TMP_Text _x2BoostActiveText;
@@ -440,6 +441,11 @@ namespace CatHotel.UI
             // Boost availability: can the player trigger a new boost right now?
             bool canWatch = ads != null && ads.IsAdReady && !ads.HasReachedDailyCap
                 && (boost == null || !boost.IsBoosted);
+
+            // Analytics: an 'offer' is each time the (permanent) boost button becomes usable
+            if (canWatch && !_boostOfferAvailable)
+                GameAnalytics.AdOfferShown(AdManager.PlacementBoostX2);
+            _boostOfferAvailable = canWatch;
 
             // Enable/disable button (blocked during active boost / no ad / cap)
             if (_addBoostButton != null)

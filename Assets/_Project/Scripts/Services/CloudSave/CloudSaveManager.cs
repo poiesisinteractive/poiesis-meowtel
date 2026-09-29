@@ -166,7 +166,9 @@ namespace CatHotel.Services
 
             if (winnerProg != null) HasPersistedSave = true;
 
-            // If LOCAL was newer, push it back to cloud now (don't wait for next save)
+            // If LOCAL was newer, push it back to cloud now (don't wait for next save).
+            // This is also how a local save reaches a new, empty UGS environment.
+            bool progressionPushFailed = false;
             if (sourceProg == "local" && localProgression != null)
             {
                 try
@@ -178,6 +180,7 @@ namespace CatHotel.Services
                 {
                     Debug.LogWarning($"[CloudSaveManager] Failed to push newer local to cloud: {e.Message}");
                     // Will retry via TrySyncPendingAsync below
+                    progressionPushFailed = true;
                     LocalSaveProvider.SetPendingSync(_settingsDirty, true);
                     _progressionDirty = true;
                     HasPendingSync = true;
@@ -212,10 +215,21 @@ namespace CatHotel.Services
             // Update local cache with the winning data so next offline boot is correct
             LocalSaveProvider.SaveSettings(Settings);
             LocalSaveProvider.SaveProgression(Progression);
-            LocalSaveProvider.ClearPendingSync();
-            _settingsDirty = false;
-            _progressionDirty = false;
-            HasPendingSync = false;
+            if (progressionPushFailed)
+            {
+                // Keep the retry: the newer local progression is not on the cloud yet
+                LocalSaveProvider.SetPendingSync(false, true);
+                _settingsDirty = false;
+                _progressionDirty = true;
+                HasPendingSync = true;
+            }
+            else
+            {
+                LocalSaveProvider.ClearPendingSync();
+                _settingsDirty = false;
+                _progressionDirty = false;
+                HasPendingSync = false;
+            }
 
             Debug.Log($"[CloudSaveManager] Load complete — progression source: {sourceProg ?? "none"}");
         }

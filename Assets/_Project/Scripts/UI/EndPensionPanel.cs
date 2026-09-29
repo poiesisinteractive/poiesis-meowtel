@@ -216,7 +216,11 @@ namespace CatHotel.UI
                 _byeLabel.text = Core.LocalizedStrings.Get("pension.bye", data.CatName);
 
             if (_doubleRect != null)
+            {
                 _doubleRect.gameObject.SetActive(true);
+                if (_doubleRect.gameObject.activeSelf)
+                    GameAnalytics.AdOfferShown(AdManager.PlacementPensionX2);
+            }
 
             _isOpen = true;
 

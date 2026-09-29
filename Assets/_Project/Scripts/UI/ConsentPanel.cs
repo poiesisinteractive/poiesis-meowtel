@@ -10,7 +10,9 @@ namespace CatHotel.UI
     /// Popup RGPD affichee au premier lancement, dans la scene Boot.
     /// Auto-wire et localise les elements par nom (recherche recursive) :
     ///   TitleLabel, DescriptionLabel (TMP_Text), AcceptButton, RefuseButton (Button).
-    /// Le BootManager attend ConsentManager.HasMadeChoice avant d'initialiser les pubs.
+    /// Deux questions successives, une par finalite : publicite personnalisee, puis
+    /// statistiques d'utilisation. Seules les questions sans reponse sont posees.
+    /// Le BootManager attend ConsentManager.HasMadeAllChoices avant d'initialiser les pubs.
     /// </summary>
     public class ConsentPanel : MonoBehaviour
     {
@@ -22,6 +24,10 @@ namespace CatHotel.UI
         [SerializeField] private Button _acceptButton;
         [SerializeField] private Button _refuseButton;
 
+        private enum Step { Ads, Analytics }
+        private Step _step;
+        private float _inputUnlockTime;
+
         private void Awake()
         {
             if (_panelRoot == null) _panelRoot = gameObject;
@@ -32,28 +38,40 @@ namespace CatHotel.UI
             if (_refuseButton == null) _refuseButton = FindChild<Button>("RefuseButton");
 
             // Already chosen: skip popup entirely
-            if (ConsentManager.HasMadeChoice)
+            bool needAds = !ConsentManager.HasMadeChoice;
+            bool needAnalytics = !ConsentManager.HasMadeAnalyticsChoice;
+            if (!needAds && !needAnalytics)
             {
                 _panelRoot.SetActive(false);
                 return;
             }
+            // Players who already answered the ads question (<= 0.35) only get the analytics one.
+            _step = needAds ? Step.Ads : Step.Analytics;
 
             // Awake() runs before BootManager.Start() resolves the language.
             // InitFromSystem() is idempotent → ensures the popup is in the device language.
             LocalizedStrings.InitFromSystem();
             ApplyLocalizedText();
+            // BootManager re-applies the saved language after the cloud load, possibly while the popup is up.
+            LocalizedStrings.OnLanguageChanged += ApplyLocalizedText;
 
             _panelRoot.SetActive(true);
             if (_acceptButton != null) _acceptButton.onClick.AddListener(OnAccept);
             if (_refuseButton != null) _refuseButton.onClick.AddListener(OnRefuse);
         }
 
+        private void OnDestroy()
+        {
+            LocalizedStrings.OnLanguageChanged -= ApplyLocalizedText;
+        }
+
         private void ApplyLocalizedText()
         {
+            bool ads = _step == Step.Ads;
             if (_titleLabel != null)
-                _titleLabel.text = LocalizedStrings.Get("consent.title");
+                _titleLabel.text = LocalizedStrings.Get(ads ? "consent.title" : "consent.analytics.title");
             if (_descriptionLabel != null)
-                _descriptionLabel.text = LocalizedStrings.Get("consent.body");
+                _descriptionLabel.text = LocalizedStrings.Get(ads ? "consent.body" : "consent.analytics.body");
 
             SetButtonLabel(_acceptButton, LocalizedStrings.Get("consent.accept"));
             SetButtonLabel(_refuseButton, LocalizedStrings.Get("consent.refuse"));
@@ -79,15 +97,30 @@ namespace CatHotel.UI
             return null;
         }
 
-        private void OnAccept()
-        {
-            ConsentManager.SetConsent(true);
-            _panelRoot.SetActive(false);
-        }
+        private void OnAccept() => Choose(true);
 
-        private void OnRefuse()
+        private void OnRefuse() => Choose(false);
+
+        private void Choose(bool accepted)
         {
-            ConsentManager.SetConsent(false);
+            // A double tap on the first question must not also answer the second one.
+            if (Time.unscaledTime < _inputUnlockTime) return;
+
+            if (_step == Step.Ads)
+            {
+                ConsentManager.SetConsent(accepted);
+                if (!ConsentManager.HasMadeAnalyticsChoice)
+                {
+                    _step = Step.Analytics;
+                    _inputUnlockTime = Time.unscaledTime + 0.5f;
+                    ApplyLocalizedText();
+                    return;
+                }
+            }
+            else
+            {
+                ConsentManager.SetAnalyticsConsent(accepted);
+            }
             _panelRoot.SetActive(false);
         }
     }
