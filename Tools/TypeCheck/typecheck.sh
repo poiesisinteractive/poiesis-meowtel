@@ -13,6 +13,8 @@
 #   --stubs               use the hand-written stubs-fallback/ instead of the real package sources (automatic when
 #                         the sources cannot be downloaded)
 #   --clean               wipe build outputs first (not the downloaded/patched reference DLLs)
+#   --legacy-consent      compile without ENABLE_UNITY_CONSENT (Start/StopDataCollection branch); by default the
+#                         harness defines it, like Unity 6000.3 does
 # Exit code: 0 = no error, 1 = compile errors, 2 = harness/setup failure.
 set -uo pipefail
 
@@ -22,6 +24,7 @@ CONFIGS="Android,Editor"
 WARNINGS=0
 CLEAN=0
 STUBS_ONLY=0
+LEGACY_CONSENT=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -30,7 +33,8 @@ while [ $# -gt 0 ]; do
     --warnings) WARNINGS=1; shift ;;
     --clean) CLEAN=1; shift ;;
     --stubs) STUBS_ONLY=1; shift ;;
-    -h|--help) sed -n '2,19p' "$0"; exit 0 ;;
+    --legacy-consent) LEGACY_CONSENT=1; shift ;;
+    -h|--help) sed -n '2,21p' "$0"; exit 0 ;;
     *) echo "typecheck.sh: unknown argument '$1' (see -h)" >&2; exit 2 ;;
   esac
 done
@@ -93,6 +97,7 @@ if [ "$need_restore" = 1 ]; then
 fi
 
 EXTRA_PROPS=()
+[ "$LEGACY_CONSENT" = 1 ] && EXTRA_PROPS+=("-p:HarnessConsentDefine=none")
 [ "$WARNINGS" = 1 ] && EXTRA_PROPS+=("-p:HarnessWarnObsolete=true")
 [ -n "${HARNESS_EXTRA_SOURCES:-}" ] && EXTRA_PROPS+=("-p:HarnessExtraSources=$HARNESS_EXTRA_SOURCES")
 # HARNESS_EXTRA_DEFINES=SYM (e.g. ENABLE_UNITY_CONSENT): extra scripting define for every assembly
