@@ -341,6 +341,16 @@ namespace CatHotel.Services
                 return false;
             }
 
+            // _adLoaded can outlive the native ad (expiry, SDK reset): ask the SDK before committing.
+            if (!_config.stubAdsForBeta && (_rewardedAd == null || !_rewardedAd.IsAdReady()))
+            {
+                Debug.LogWarning($"[Ads] Cannot show ad for {placement} — SDK reports no ad ready, reloading");
+                _adLoaded = false;
+                RaiseAvailabilityChanged();
+                LoadRewardedAd();
+                return false;
+            }
+
             _request = new RewardedRequest { Placement = placement, Callback = onComplete };
             _adLoaded = false;
             RaiseAvailabilityChanged();

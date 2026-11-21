@@ -72,7 +72,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DefineConstants>$(UnityCommonDefines);$(ProjectScriptingDefines);$(PlatformDefines);$(ExtraDefines)</DefineConstants>
+    <!-- Unity 6000.3 defines ENABLE_UNITY_CONSENT itself, so the shipped code is the EndUserConsent branch.
+         typecheck.sh with the legacy-consent flag clears it to compile the Start/StopDataCollection branch instead. -->
+    <HarnessConsentDefine Condition="'$(HarnessConsentDefine)' == ''">ENABLE_UNITY_CONSENT</HarnessConsentDefine>
+    <HarnessConsentDefine Condition="'$(HarnessConsentDefine)' == 'none'"></HarnessConsentDefine>
+    <DefineConstants>$(UnityCommonDefines);$(ProjectScriptingDefines);$(PlatformDefines);$(HarnessConsentDefine);$(ExtraDefines)</DefineConstants>
   </PropertyGroup>
 
   <!-- Newtonsoft.Json as shipped by com.unity.nuget.newtonsoft-json 3.2.2 (auto-referenced in Unity; AOT build on players) -->

@@ -14,9 +14,9 @@ namespace CatHotel.Services
     /// question of the consent popup (ConsentManager) and UGS is initialized; every call is a
     /// no-op otherwise and never throws. Call from the main thread only.
     ///
-    /// Unity 6.2+ (ENABLE_UNITY_CONSENT): collection is driven through EndUserConsent
-    /// (AnalyticsIntent) — Start/StopDataCollection must never be called in that mode.
-    /// Older engines: Start/StopDataCollection after UGS init.
+    /// ENABLE_UNITY_CONSENT (defined by Unity 6000.3, so this is the shipped path): collection is
+    /// driven through EndUserConsent (AnalyticsIntent) — Start/StopDataCollection must never be
+    /// called in that mode. Without it: Start/StopDataCollection after UGS init.
     ///
     /// Every event and parameter below must be declared in the UGS dashboard (Event Manager),
     /// with the same types, otherwise the events are flagged invalid.
@@ -137,8 +137,8 @@ namespace CatHotel.Services
 
         /// <summary>
         /// Asks Unity to delete the data already collected for this player (right to erasure),
-        /// called when the player withdraws analytics consent. Only valid once consent is refused
-        /// (the SDK throws while it is granted). Persisted and replayed if UGS is not ready yet.
+        /// called when the player withdraws analytics consent. Only sent once consent is refused
+        /// (Unity's sequence: Denied, then RequestDataDeletion). Persisted and replayed if UGS is not ready yet.
         /// </summary>
         public static void RequestDataDeletion()
         {

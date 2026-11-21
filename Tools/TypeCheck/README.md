@@ -18,10 +18,11 @@ pas que le jeu fonctionne. Tester dans l'éditeur et sur appareil reste obligato
 
 ```bash
 Tools/TypeCheck/typecheck.sh                 # Android + Editor (par défaut)
-Tools/TypeCheck/typecheck.sh -c all          # Android, Editor, Dev, WebGL
+Tools/TypeCheck/typecheck.sh -c all          # Android, Editor, Dev, WebGL (à lancer avant chaque commit)
 Tools/TypeCheck/typecheck.sh --warnings      # affiche aussi les avertissements (API obsolètes)
-HARNESS_EXTRA_DEFINES=ENABLE_UNITY_CONSENT Tools/TypeCheck/typecheck.sh   # branche Unity 6.2+ du consentement
-HARNESS_EXTRA_SOURCES=Assets/_Project/Scripts/Editor/MonOutil.cs Tools/TypeCheck/typecheck.sh -c Editor
+Tools/TypeCheck/typecheck.sh --legacy-consent   # sans ENABLE_UNITY_CONSENT (branche que Unity 6000.3 ne compile pas)
+HARNESS_EXTRA_DEFINES=SYMBOLE Tools/TypeCheck/typecheck.sh                 # define supplémentaire
+HARNESS_EXTRA_SOURCES="$PWD/Assets/_Project/Scripts/Editor/MonOutil.cs" Tools/TypeCheck/typecheck.sh -c Editor   # chemin absolu
 Tools/TypeCheck/selftest.sh                  # vérifie que le banc détecte bien les erreurs attendues
 ```
 
@@ -43,7 +44,8 @@ Si les sources des packages ne peuvent pas être téléchargées, le banc bascul
 ## Angles morts
 
 - Les **stubs encodent des hypothèses** : les membres marqués `// GUESS` ou `// API-BELIEF` ne sont
-  pas vérifiés (notamment l'écriture de `EndUserConsent`, Unity 6.2+).
+  pas vérifiés. `ENABLE_UNITY_CONSENT` est défini par défaut, comme dans Unity 6000.3 : le code
+  compilé est celui qui part en build (`EndUserConsent`, vérifié contre la Scripting Reference 6000.3).
 - Les scripts des dossiers `Editor/` ne sont pas compilés (seulement à la demande via
   `HARNESS_EXTRA_SOURCES`, avec un sous-ensemble d'UnityEditor).
 - LevelPlay est compilé en 9.4.0 (le projet utilise 9.4.1, non publié sur les miroirs).
