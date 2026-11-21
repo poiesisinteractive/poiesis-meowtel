@@ -53,6 +53,7 @@ namespace CatHotel.Cats
         private CatHotel.Grid.GridRenderer _gridRenderer;
         private CatSpawner _spawner;
         private CatNeeds _needs;
+        private CatHappiness _happiness; // added before CatEntity in every spawn path
         private CatBreedData _breed;
         private Vector2Int _gridPos;
         private Sequence _moveSequence;
@@ -136,6 +137,7 @@ namespace CatHotel.Cats
             _sr = GetComponent<SpriteRenderer>();
             _animator = GetComponent<Animator>();
             _needs = GetComponent<CatNeeds>();
+            _happiness = GetComponent<CatHappiness>();
             transform.position = CellToWorld(startCell);
 
             _currentDir = CatDirection.Front;
@@ -201,6 +203,13 @@ namespace CatHotel.Cats
             {
                 // --- Freeze ---
                 _moveSequence?.Kill();
+                if (_isDeparting && _departureArrival != null)
+                {
+                    // Killing the walk skips its OnComplete: finish the departure without the walk
+                    // (like a cat already on a hidden floor), outside the floor-sync loop.
+                    _interruptedDeparture = _departureArrival;
+                    _departureArrival = null;
+                }
                 _pendingAction?.Kill();
                 SyncGridPos();
                 transform.position = CellToWorld(_gridPos);
@@ -215,6 +224,13 @@ namespace CatHotel.Cats
         private bool _simulationFrozen;
         public bool CanPlaySfx => _canPlaySfx;
 
+        // A departure walk must always reach its callback: it pays the recap and removes the cat.
+        private System.Action _departureArrival;     // callback of the departure walk in progress
+        private System.Action _interruptedDeparture; // walk killed by a freeze: finished in LateUpdate
+        private bool _hasDeferredDeparture;          // departure requested while fighting
+        private Vector2Int _deferredTarget;
+        private System.Action _deferredArrival;
+
         private void LateUpdate()
         {
             // Sort by Y: cats use a higher base (15000) than objects (10000)
@@ -224,6 +240,28 @@ namespace CatHotel.Cats
 
             if (_fightCooldown > 0f)
                 _fightCooldown -= Time.deltaTime;
+
+            if (_interruptedDeparture != null)
+            {
+                var callback = _interruptedDeparture;
+                _interruptedDeparture = null;
+                callback();
+            }
+        }
+
+        /// <summary>A departure requested during a fight starts once the fight is over.</summary>
+        private void ResumeDeferredDeparture()
+        {
+            if (!_hasDeferredDeparture) return;
+            _hasDeferredDeparture = false;
+            var callback = _deferredArrival;
+            _deferredArrival = null;
+            if (_simulationFrozen)
+            {
+                _interruptedDeparture = callback; // hidden floor: finish without walking
+                return;
+            }
+            WalkToTarget(_deferredTarget, callback);
         }
 
         /// <summary>Set breed data for speed multiplier.</summary>
@@ -367,8 +405,7 @@ namespace CatHotel.Cats
             if (_spawner == null || !CanFight()) return false;
 
             // Only fight if happiness is low (GDD: < 50%)
-            var happiness = GetComponent<CatHappiness>();
-            if (happiness != null && happiness.Value >= 50f) return false;
+            if (_happiness != null && _happiness.Value >= 50f) return false;
 
             // Find nearest cat on the SAME Y row and within 1.5 cells horizontally
             CatEntity neighbor = null;
@@ -420,10 +457,8 @@ namespace CatHotel.Cats
             right.transform.position = new Vector3(midX + 0.4f, midY, 0f);
 
             // Apply happiness penalty (GDD: -25)
-            var leftH = left.GetComponent<CatHappiness>();
-            var rightH = right.GetComponent<CatHappiness>();
-            leftH?.ApplyFightPenalty();
-            rightH?.ApplyFightPenalty();
+            if (left._happiness != null) left._happiness.ApplyFightPenalty();
+            if (right._happiness != null) right._happiness.ApplyFightPenalty();
 
             var seq = DOTween.Sequence();
             GameObject cloudGo = null;
@@ -474,6 +509,8 @@ namespace CatHotel.Cats
                 right._isFighting = false;
                 left._fightCooldown = 30f;
                 right._fightCooldown = 30f;
+                left.ResumeDeferredDeparture();
+                right.ResumeDeferredDeparture();
                 left.EnterRest();
                 right.EnterRest();
             });
@@ -753,7 +790,7 @@ namespace CatHotel.Cats
             float ratePerSec = _targetObject.SatisfactionRate;
             float elapsed = 0f;
 
-            Debug.Log($"[CatEntity] {gameObject.name} started using object for need={need}, duration={duration}s");
+            DevLog.Log($"[CatEntity] {name} started using object for need={need}, duration={duration}s");
             _pendingAction = DOVirtual.Float(0f, duration, duration, t =>
             {
                 float dt = t - elapsed;
@@ -762,7 +799,7 @@ namespace CatHotel.Cats
                     _needs.Satisfy(need, ratePerSec * dt);
             }).OnComplete(() =>
             {
-                Debug.Log($"[CatEntity] {gameObject.name} finished using object, firing OnServiceUsed (listeners={OnServiceUsed?.GetInvocationList()?.Length ?? 0})");
+                DevLog.Log($"[CatEntity] {name} finished using object");
                 ReleaseCurrentObject();
                 _chosenRestState = null;
                 OnServiceUsed?.Invoke();
@@ -833,7 +870,17 @@ namespace CatHotel.Cats
 
         public void WalkToTarget(Vector2Int target, System.Action onArrival)
         {
-            if (_isFighting) return;
+            if (_isFighting)
+            {
+                // Never drop a departure: it would leave the cat stuck, unpaid, holding a slot.
+                if (_isDeparting)
+                {
+                    _hasDeferredDeparture = true;
+                    _deferredTarget = target;
+                    _deferredArrival = onArrival;
+                }
+                return;
+            }
             _moveSequence?.Kill();
             _pendingAction?.Kill();
             SyncGridPos();
@@ -854,6 +901,7 @@ namespace CatHotel.Cats
             }
 
             _isWalking = true;
+            _departureArrival = _isDeparting ? onArrival : null;
             _moveSequence = DOTween.Sequence();
 
             for (int i = 1; i < path.Count; i++)
@@ -877,6 +925,7 @@ namespace CatHotel.Cats
             {
                 _gridPos = finalCell;
                 _isWalking = false;
+                _departureArrival = null;
                 if (onArrival != null) onArrival();
                 // If callback didn't start a new action, restart AI
                 if (!_isWalking && !_isUsingObject && !_isFighting)
@@ -943,7 +992,7 @@ namespace CatHotel.Cats
                 }
                 // Run state missing for this breed — fall back to Walk so the cat
                 // still animates instead of sliding with a static sprite.
-                Debug.LogWarning($"[CatEntity] Missing {runState} on '{_animator?.runtimeAnimatorController?.name}' — fallback to Walk_{dir}");
+                DevLog.Warn($"[CatEntity] Missing {runState} on '{_animator?.runtimeAnimatorController?.name}' — fallback to Walk_{dir}");
             }
             PlayAnimState($"Walk_{dir}");
         }

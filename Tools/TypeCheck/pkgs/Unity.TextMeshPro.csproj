@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- REAL sources of com.unity.textmeshpro 3.2.0-pre.15 (needle-mirror). In Unity 6 TextMesh Pro ships inside
+       com.unity.ugui 2.0.0; its TMPro API derives from the 3.2.0 pre-release line. -->
+  <PropertyGroup>
+    <AssemblyName>Unity.TextMeshPro</AssemblyName>
+    <PkgDir>$(HarnessRoot)lib/pkgsrc/com.unity.textmeshpro@3.2.0-pre.15/</PkgDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(PkgDir)Scripts/Runtime/**/*.cs" />
+    <ProjectReference Include="UnityEngine.UI.csproj" />
+  </ItemGroup>
+</Project>

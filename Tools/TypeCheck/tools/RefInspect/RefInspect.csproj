@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Lists the types/members (with accessibility) of a .NET assembly: dotnet tools/RefInspect/out/RefInspect.dll <dll> [Namespace.Type] -->
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><Nullable>disable</Nullable><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+</Project>

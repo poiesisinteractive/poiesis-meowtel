@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- REAL sources of com.unity.profiling.core 1.0.3 (needle-mirror): dependency of Unity.ResourceManager. -->
+  <PropertyGroup>
+    <AssemblyName>Unity.Profiling.Core</AssemblyName>
+    <PkgDir>$(HarnessRoot)lib/pkgsrc/com.unity.profiling.core@1.0.3/</PkgDir>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(PkgDir)Runtime/**/*.cs" />
+  </ItemGroup>
+</Project>

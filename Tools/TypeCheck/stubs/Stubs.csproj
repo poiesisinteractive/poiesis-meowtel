@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Compile-only stubs for the external APIs that have no usable real source: URP subset, Unity 6-only UnityEngine types,
+       UnityEditor subset (Editor configuration only). Package APIs come from real sources (pkgs/) or stubs-fallback/.
+       Stubs encode BELIEFS about the real APIs; members marked // GUESS or // API-BELIEF are unverified. -->
+  <PropertyGroup>
+    <AssemblyName>Meowtel.Harness.Stubs</AssemblyName>
+    <NoWarn>$(NoWarn);CS0626;CS0824;CS0067;CS8618</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="**/*.cs" Exclude="obj/**;bin/**" />
+  </ItemGroup>
+</Project>

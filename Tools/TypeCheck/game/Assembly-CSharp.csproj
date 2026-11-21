@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Mirrors Unity's Assembly-CSharp: every runtime script of the game, referenced IN PLACE (not copied).
+       Special "Editor" folders are excluded exactly like Unity does for scripts outside an asmdef. -->
+  <PropertyGroup>
+    <AssemblyName>Assembly-CSharp</AssemblyName>
+    <RootNamespace>CatHotel</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MeowtelRepo)/Assets/_Project/Scripts/**/*.cs"
+             Exclude="$(MeowtelRepo)/Assets/_Project/Scripts/Editor/**;$(MeowtelRepo)/Assets/_Project/Scripts/**/Editor/**" />
+    <!-- Only used by selftest.sh: extra snippet files compiled into the game assembly. -->
+    <Compile Include="$(HarnessExtraSources)" Condition="'$(HarnessExtraSources)' != ''" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../firstpass/Assembly-CSharp-firstpass.csproj" />
+    <!-- Google.Play.Games asmdef: includePlatforms Android + Editor -->
+    <ProjectReference Include="../gpgs/Google.Play.Games.csproj" Condition="'$(HarnessHasGpgs)' == 'true'" />
+  </ItemGroup>
+  <Import Project="../references.props" />
+</Project>

@@ -45,8 +45,10 @@ namespace CatHotel.Core
         public float tipPercent = 0.2f;
 
         [Header("Refuge")]
-        [Tooltip("Seconds of happiness > 70% before an adopter shows up")]
+        [Tooltip("Seconds of continuous happiness >= adoptionHappyThreshold before an adopter shows up")]
         public float adoptionHappyDuration = 30f;
+        [Tooltip("Happiness (0-100) a refuge cat must keep to attract an adopter")]
+        public float adoptionHappyThreshold = 70f;
         [Tooltip("Base adoption fee multiplier")]
         public float adoptionFeeMultiplier = 2f;
 

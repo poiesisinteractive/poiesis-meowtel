@@ -11,6 +11,7 @@ namespace CatHotel.Cats
     public class CatHappiness : MonoBehaviour
     {
         private CatNeeds _needs;
+        private CatEntity _entity; // resolved lazily: HotelManager adds CatEntity AFTER CatHappiness.Init()
         private GameConfig _config;
         private CatTraitModifiers _traitMods = CatTraitModifiers.Default;
 
@@ -109,8 +110,8 @@ namespace CatHotel.Cats
                 0f, 100f);
 
             // Track time below leave threshold (but not during arrival — grace period)
-            var entity = GetComponent<CatEntity>();
-            bool isArriving = entity != null && entity.IsArriving;
+            if (_entity == null) TryGetComponent(out _entity);
+            bool isArriving = _entity != null && _entity.IsArriving;
 
             if (_happiness < _config.unhappyLeaveThreshold && !isArriving)
                 _unhappyTimer += dt;

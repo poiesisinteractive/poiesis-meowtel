@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- REAL sources of com.unity.services.core 1.16.0 (needle-mirror), all runtime asmdefs merged into one assembly. -->
+  <PropertyGroup>
+    <AssemblyName>Unity.Services.Core</AssemblyName>
+    <PkgDir>$(HarnessRoot)lib/pkgsrc/com.unity.services.core@1.16.0/</PkgDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(PkgDir)Runtime/**/*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="$(NewtonsoftDll)"><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

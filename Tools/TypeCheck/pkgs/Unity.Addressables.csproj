@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- REAL sources of com.unity.addressables 2.8.1 Runtime (minus ResourceManager, its own asmdef) (needle-mirror). -->
+  <PropertyGroup>
+    <AssemblyName>Unity.Addressables</AssemblyName>
+    <PkgDir>$(HarnessRoot)lib/pkgsrc/com.unity.addressables@2.8.1/</PkgDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(PkgDir)Runtime/**/*.cs" Exclude="$(PkgDir)Runtime/ResourceManager/**" />
+    <ProjectReference Include="Unity.ResourceManager.csproj" />
+  </ItemGroup>
+</Project>

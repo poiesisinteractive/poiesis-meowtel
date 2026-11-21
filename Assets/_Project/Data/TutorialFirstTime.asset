@@ -33,196 +33,6 @@ MonoBehaviour:
     bubbleOnRight: 0
     actionOnStart: 0
     actionOnComplete: 0
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 454e2ec86907b76448d35e82a8ae5b34, type: 3}
-    textKey: tuto.floors
-    trigger: 0
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: 
-    bubbleOnRight: 0
-    actionOnStart: 0
-    actionOnComplete: 0
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
-    textKey: tuto.levelup.intro
-    trigger: 0
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: 
-    bubbleOnRight: 0
-    actionOnStart: 0
-    actionOnComplete: 0
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 454e2ec86907b76448d35e82a8ae5b34, type: 3}
-    textKey: tuto.levelup.xp
-    trigger: 0
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: 
-    bubbleOnRight: 0
-    actionOnStart: 0
-    actionOnComplete: 0
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
-    textKey: tuto.levelup.cond
-    trigger: 0
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: 
-    bubbleOnRight: 0
-    actionOnStart: 0
-    actionOnComplete: 0
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 454e2ec86907b76448d35e82a8ae5b34, type: 3}
-    textKey: tuto.levelup.tap
-    trigger: 10
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: 
-    bubbleOnRight: 0
-    actionOnStart: 19
-    actionOnComplete: 0
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
-    textKey: tuto.levelup.done
-    trigger: 11
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: 
-    bubbleOnRight: 0
-    actionOnStart: 0
-    actionOnComplete: 21
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 454e2ec86907b76448d35e82a8ae5b34, type: 3}
-    textKey: tuto.hud.coins
-    trigger: 0
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: Catcoins
-    bubbleOnRight: 0
-    actionOnStart: 20
-    actionOnComplete: 21
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
-    textKey: tuto.hud.purrls
-    trigger: 0
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: Puurls
-    bubbleOnRight: 0
-    actionOnStart: 20
-    actionOnComplete: 21
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 454e2ec86907b76448d35e82a8ae5b34, type: 3}
-    textKey: tuto.hud.capacity
-    trigger: 0
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: Capacity
-    bubbleOnRight: 0
-    actionOnStart: 20
-    actionOnComplete: 21
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
-    textKey: tuto.hud.comfort
-    trigger: 0
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: Comfort
-    bubbleOnRight: 0
-    actionOnStart: 20
-    actionOnComplete: 21
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 454e2ec86907b76448d35e82a8ae5b34, type: 3}
-    textKey: tuto.hud.floors
-    trigger: 0
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: Floors
-    bubbleOnRight: 0
-    actionOnStart: 20
-    actionOnComplete: 21
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
-    textKey: tuto.hud.system
-    trigger: 0
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: System
-    bubbleOnRight: 1
-    actionOnStart: 20
-    actionOnComplete: 21
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 454e2ec86907b76448d35e82a8ae5b34, type: 3}
-    textKey: tuto.hud.collectall
-    trigger: 0
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: CollectAllAction
-    bubbleOnRight: 1
-    actionOnStart: 20
-    actionOnComplete: 21
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
-    textKey: tuto.hud.addboost
-    trigger: 0
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: AddBoost
-    bubbleOnRight: 1
-    actionOnStart: 20
-    actionOnComplete: 21
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 454e2ec86907b76448d35e82a8ae5b34, type: 3}
-    textKey: tuto.hud.nextcat
-    trigger: 0
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: NextCat
-    bubbleOnRight: 0
-    actionOnStart: 20
-    actionOnComplete: 21
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
-    textKey: tuto.hud.shop
-    trigger: 0
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: ShopAction
-    bubbleOnRight: 0
-    actionOnStart: 20
-    actionOnComplete: 21
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
-    textKey: tuto.pension
-    trigger: 0
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: 
-    bubbleOnRight: 0
-    actionOnStart: 4
-    actionOnComplete: 7
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 454e2ec86907b76448d35e82a8ae5b34, type: 3}
-    textKey: tuto.refuge
-    trigger: 0
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: 
-    bubbleOnRight: 0
-    actionOnStart: 5
-    actionOnComplete: 7
-  - speakerLabelKey: tuto.speaker.jasper
-    speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
-    textKey: tuto.unhappy
-    trigger: 0
-    requiredCategory: 0
-    delaySeconds: 3
-    highlightTarget: 
-    bubbleOnRight: 0
-    actionOnStart: 6
-    actionOnComplete: 7
   - speakerLabelKey: 
     speakerPortrait: {fileID: 0}
     textKey: 
@@ -278,7 +88,7 @@ MonoBehaviour:
     textKey: 
     trigger: 12
     requiredCategory: 0
-    delaySeconds: 5
+    delaySeconds: 3
     highlightTarget: 
     bubbleOnRight: 0
     actionOnStart: 0
@@ -313,6 +123,16 @@ MonoBehaviour:
     bubbleOnRight: 0
     actionOnStart: 0
     actionOnComplete: 0
+  - speakerLabelKey: tuto.speaker.jasper
+    speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
+    textKey: tuto.hud.shop
+    trigger: 0
+    requiredCategory: 0
+    delaySeconds: 3
+    highlightTarget: ShopAction
+    bubbleOnRight: 0
+    actionOnStart: 20
+    actionOnComplete: 21
   - speakerLabelKey: tuto.speaker.jasper
     speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
     textKey: tuto.buyfood
@@ -463,6 +283,76 @@ MonoBehaviour:
     bubbleOnRight: 0
     actionOnStart: 0
     actionOnComplete: 0
+  - speakerLabelKey: tuto.speaker.jasper
+    speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
+    textKey: tuto.pension
+    trigger: 0
+    requiredCategory: 0
+    delaySeconds: 3
+    highlightTarget: 
+    bubbleOnRight: 0
+    actionOnStart: 4
+    actionOnComplete: 7
+  - speakerLabelKey: tuto.speaker.jasper
+    speakerPortrait: {fileID: 21300000, guid: 454e2ec86907b76448d35e82a8ae5b34, type: 3}
+    textKey: tuto.refuge
+    trigger: 0
+    requiredCategory: 0
+    delaySeconds: 3
+    highlightTarget: 
+    bubbleOnRight: 0
+    actionOnStart: 5
+    actionOnComplete: 7
+  - speakerLabelKey: tuto.speaker.jasper
+    speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
+    textKey: tuto.unhappy
+    trigger: 0
+    requiredCategory: 0
+    delaySeconds: 3
+    highlightTarget: 
+    bubbleOnRight: 0
+    actionOnStart: 6
+    actionOnComplete: 7
+  - speakerLabelKey: tuto.speaker.jasper
+    speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
+    textKey: tuto.levelup.intro
+    trigger: 0
+    requiredCategory: 0
+    delaySeconds: 3
+    highlightTarget: 
+    bubbleOnRight: 0
+    actionOnStart: 0
+    actionOnComplete: 0
+  - speakerLabelKey: tuto.speaker.jasper
+    speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
+    textKey: tuto.levelup.cond
+    trigger: 0
+    requiredCategory: 0
+    delaySeconds: 3
+    highlightTarget: 
+    bubbleOnRight: 0
+    actionOnStart: 0
+    actionOnComplete: 0
+  - speakerLabelKey: tuto.speaker.jasper
+    speakerPortrait: {fileID: 21300000, guid: 454e2ec86907b76448d35e82a8ae5b34, type: 3}
+    textKey: tuto.levelup.tap
+    trigger: 10
+    requiredCategory: 0
+    delaySeconds: 3
+    highlightTarget: 
+    bubbleOnRight: 0
+    actionOnStart: 19
+    actionOnComplete: 0
+  - speakerLabelKey: tuto.speaker.jasper
+    speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
+    textKey: tuto.levelup.done
+    trigger: 11
+    requiredCategory: 0
+    delaySeconds: 3
+    highlightTarget: 
+    bubbleOnRight: 0
+    actionOnStart: 0
+    actionOnComplete: 21
   - speakerLabelKey: tuto.speaker.jasper
     speakerPortrait: {fileID: 21300000, guid: 510adafb02d4c4140a4cbe1159bfc159, type: 3}
     textKey: tuto.complete

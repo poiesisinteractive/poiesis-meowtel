@@ -19,6 +19,7 @@ namespace CatHotel.UI
         public int BaseCoins;
         public int TipCoins;
         public int TotalCoins;
+        public bool IsAdoption; // refuge adoption recap (fee) instead of a pension stay recap
     }
 
     /// <summary>
@@ -52,6 +53,11 @@ namespace CatHotel.UI
         private RectTransform _byeRect;
         private TMP_Text _byeLabel;
         private RectTransform _doubleRect;
+        // Static labels swapped for the adoption variant (localized by SceneTextLocalizer by default)
+        private TMP_Text _titleLabel;
+        private TMP_Text _happinessLabel;
+        private TMP_Text _baseLabel;
+        private TMP_Text _tipLabel;
 
         // Coin fly
         private RectTransform _coinTarget;
@@ -64,6 +70,9 @@ namespace CatHotel.UI
         private int _bonusCoins;
         private Coroutine _animCoroutine;
         private Coroutine _autoCloseCoroutine;
+        private int _sessionId;          // incremented per recap shown (ad callbacks may outlive a recap)
+        private bool _offerTracked;      // analytics: x2 offer recorded for this recap
+        private AdManager _adsSubscribed; // AdManager whose availability event we listen to
 
         // Queue for multiple pension ends
         private readonly Queue<(PensionEndData data, Action<int> onCollect)> _pendingQueue = new();
@@ -86,6 +95,21 @@ namespace CatHotel.UI
                 _sfxSource.playOnAwake = false;
                 _sfxSource.spatialBlend = 0f;
             }
+        }
+
+        private bool _listeningLanguage;
+
+        private void OnDestroy()
+        {
+            if (_adsSubscribed != null) _adsSubscribed.OnAdAvailabilityChanged -= OnAdAvailabilityChanged;
+            if (_listeningLanguage) Core.LocalizedStrings.OnLanguageChanged -= OnLanguageChanged;
+        }
+
+        // SceneTextLocalizer re-applies the pension wording to the shared labels on a language
+        // change; re-apply the current variant after it (subscribed later, so called later).
+        private void OnLanguageChanged()
+        {
+            if (_isOpen) ApplyVariantTexts(_data);
         }
 
         private void CacheReferences()
@@ -114,6 +138,10 @@ namespace CatHotel.UI
             _byeRect = FindRect(_panelObj, "ByeAction");
             _byeLabel = FindTMP(_panelObj, "ByeLabel");
             _doubleRect = FindRect(_panelObj, "X2GainCollectRewardedAdAction");
+            _titleLabel = FindTMP(_panelObj, "EnPensionLabel");
+            _happinessLabel = FindTMP(_panelObj, "HapinessLabel");
+            _baseLabel = FindTMP(_panelObj, "BaseLabel");
+            _tipLabel = FindTMP(_panelObj, "TipLabel");
 
             AddJuice(_byeRect);
             AddJuice(_doubleRect);
@@ -190,6 +218,14 @@ namespace CatHotel.UI
             _bonusCoins = 0;
             _adInProgress = false;
             _panelReady = false;
+            _sessionId++;
+            _offerTracked = false;
+            SubscribeToAds();
+            if (!_listeningLanguage)
+            {
+                Core.LocalizedStrings.OnLanguageChanged += OnLanguageChanged;
+                _listeningLanguage = true;
+            }
 
             UISoundManager.Instance?.PlayOpenSection();
             _panelObj.SetActive(true);
@@ -212,13 +248,10 @@ namespace CatHotel.UI
             if (_tipValue != null) _tipValue.text = "0";
             if (_totalValue != null) _totalValue.text = "0";
 
-            if (_byeLabel != null)
-                _byeLabel.text = Core.LocalizedStrings.Get("pension.bye", data.CatName);
-
-            if (_doubleRect != null)
-                _doubleRect.gameObject.SetActive(true);
+            ApplyVariantTexts(data);
 
             _isOpen = true;
+            RefreshDoubleButton();
 
             // Slide in to rest position
             _slideTween?.Kill();
@@ -379,14 +412,78 @@ namespace CatHotel.UI
             text.text = format(to);
         }
 
+        /// <summary>Pension or adoption wording on the shared recap panel.</summary>
+        private void ApplyVariantTexts(PensionEndData data)
+        {
+            bool adoption = data.IsAdoption;
+            if (_titleLabel != null)
+                _titleLabel.text = Core.LocalizedStrings.Get(adoption ? "adoption.title" : "pension.title");
+            if (_happinessLabel != null)
+                _happinessLabel.text = Core.LocalizedStrings.Get(adoption ? "adoption.happiness" : "pension.happiness");
+            if (_baseLabel != null)
+                _baseLabel.text = Core.LocalizedStrings.Get(adoption ? "adoption.fee" : "pension.base");
+            // No tip on adoptions: hide the tip row
+            if (_tipLabel != null)
+            {
+                _tipLabel.text = Core.LocalizedStrings.Get("pension.tip");
+                _tipLabel.gameObject.SetActive(!adoption);
+            }
+            if (_tipValue != null) _tipValue.gameObject.SetActive(!adoption);
+            if (_byeLabel != null)
+                _byeLabel.text = Core.LocalizedStrings.Get(adoption ? "adoption.bye" : "pension.bye", data.CatName);
+        }
+
+        private string CurrentPlacement =>
+            _data.IsAdoption ? AdManager.PlacementAdoptionX2 : AdManager.PlacementPensionX2;
+
+        // ---------- x2 rewarded ad ----------
+
+        private void SubscribeToAds()
+        {
+            var ads = AdManager.Instance;
+            if (ads == null || ads == _adsSubscribed) return;
+            if (_adsSubscribed != null) _adsSubscribed.OnAdAvailabilityChanged -= OnAdAvailabilityChanged;
+            ads.OnAdAvailabilityChanged += OnAdAvailabilityChanged;
+            _adsSubscribed = ads;
+        }
+
+        private void OnAdAvailabilityChanged()
+        {
+            if (_isOpen && !_adInProgress) RefreshDoubleButton();
+        }
+
+        /// <summary>x2 is only offered when an ad can really be shown, outside the tutorial, once per recap.</summary>
+        private bool CanOfferDouble()
+        {
+            if (_bonusCoins > 0) return false;
+            var ads = AdManager.Instance;
+            if (ads == null || !ads.CanShowRewardedFor(CurrentPlacement)) return false;
+            var tutorial = Tutorial.TutorialManager.Instance;
+            return tutorial == null || !tutorial.IsActive;
+        }
+
+        private void RefreshDoubleButton()
+        {
+            if (_doubleRect == null) return;
+            bool offer = CanOfferDouble();
+            if (_doubleRect.gameObject.activeSelf != offer)
+                _doubleRect.gameObject.SetActive(offer);
+            if (offer && !_offerTracked)
+            {
+                _offerTracked = true;
+                GameAnalytics.AdOfferShown(CurrentPlacement);
+            }
+        }
+
         private void TryDoubleGains()
         {
             if (!_isOpen || !_panelReady || _adInProgress) return;
 
             var ads = AdManager.Instance;
-            if (ads == null || !ads.IsAdReady)
+            if (!CanOfferDouble())
             {
-                Debug.LogWarning("[Pension] Ad not ready");
+                Debug.LogWarning("[Pension] Ad not available");
+                RefreshDoubleButton();
                 return;
             }
 
@@ -399,12 +496,23 @@ namespace CatHotel.UI
             }
             SnapNumbersToFinal();
 
+            // Collect the base payout BEFORE the ad: if the OS kills the app during the ad,
+            // the cat and its payout must not be lost (the bonus is credited separately).
+            AutoCollect();
+
             _adInProgress = true;
             StopAutoCloseTimer(); // don't close while ad is playing
 
-            ads.OnPensionAdCompleted += OnPensionAdSuccess;
-            ads.OnPensionAdFailed += OnPensionAdFail;
-            ads.ShowPensionAd();
+            int session = _sessionId;
+            int bonus = _data.TotalCoins;
+            bool shown = ads.ShowRewarded(CurrentPlacement,
+                rewarded => OnPensionAdResult(session, bonus, rewarded));
+            if (!shown)
+            {
+                _adInProgress = false;
+                StartAutoCloseTimer();
+                RefreshDoubleButton();
+            }
         }
 
         private void SnapNumbersToFinal()
@@ -416,12 +524,29 @@ namespace CatHotel.UI
             if (_totalValue != null) _totalValue.text = $"{_data.TotalCoins:0}";
         }
 
-        private void OnPensionAdSuccess()
+        /// <summary>Called exactly once per x2 request by AdManager.</summary>
+        private void OnPensionAdResult(int session, int bonus, bool rewarded)
         {
-            UnsubPensionAd();
+            if (rewarded)
+            {
+                // Always credit the reward, even if this recap is no longer the one on screen.
+                var economy = GetComponent<CatHotel.Economy.EconomyManager>();
+                if (economy != null)
+                    economy.AddCoins(bonus);
+                Debug.Log($"[Pension] x2 bonus: +{bonus} coins");
+            }
+
+            if (session != _sessionId || !_isOpen) return; // recap already closed / replaced
             _adInProgress = false;
 
-            _bonusCoins = _data.TotalCoins;
+            if (!rewarded)
+            {
+                Debug.LogWarning("[Pension] Ad not completed — no bonus");
+                Close();
+                return;
+            }
+
+            _bonusCoins = bonus;
             int newTotal = _data.TotalCoins + _bonusCoins;
 
             if (_totalValue != null)
@@ -439,38 +564,14 @@ namespace CatHotel.UI
             if (_doubleRect != null)
                 _doubleRect.gameObject.SetActive(false);
 
-            var economy = GetComponent<CatHotel.Economy.EconomyManager>();
-            if (economy != null)
-                economy.AddCoins(_bonusCoins);
-
             if (_sfxSource != null && _collectSfx != null)
                 _sfxSource.PlayOneShot(_collectSfx, ParametersPanel.EffectsVolume);
 
             int flyCoinCount = Mathf.Clamp(_bonusCoins / 10, 2, 6);
             StartCoroutine(CoinFlyFromTotal(flyCoinCount));
 
-            Debug.Log($"[Pension] x2 bonus: +{_bonusCoins} coins (total shown: {newTotal})");
-
             // Close immediately after ad return
             Close();
-        }
-
-        private void OnPensionAdFail()
-        {
-            UnsubPensionAd();
-            _adInProgress = false;
-            Debug.LogWarning("[Pension] Ad failed");
-
-            // Close on ad failure too
-            Close();
-        }
-
-        private void UnsubPensionAd()
-        {
-            var ads = AdManager.Instance;
-            if (ads == null) return;
-            ads.OnPensionAdCompleted -= OnPensionAdSuccess;
-            ads.OnPensionAdFailed -= OnPensionAdFail;
         }
 
         private IEnumerator CoinFlyFromTotal(int count)

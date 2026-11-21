@@ -109,3 +109,6 @@ CloudCode/**/*.nupkg
 ids.txt
 /Packages/com.unity.mobile.android-logcat
 /_buildWindows
+
+# Tools/TypeCheck (.NET type-check harness): its project files are sources, not Unity-generated
+!Tools/TypeCheck/**/*.csproj

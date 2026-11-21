@@ -1,0 +1,91 @@
+<Project>
+  <!--
+    Shared settings for the Meowtel type-check harness.
+    Mirrors the Unity 6000.3 compile environment as closely as possible:
+      - API compatibility level .NET Standard 2.1 (ProjectSettings apiCompatibilityLevel: 6)
+      - C# 9 (Unity 6 compiler language level)
+      - Scripting defines of the Android player (ProjectSettings scriptingDefineSymbols: Android)
+    Configurations (pass with -c):
+      Android : Android release player      (UNITY_ANDROID, !UNITY_EDITOR, !DEVELOPMENT_BUILD)   [default]
+      Editor  : Unity editor, target Android (UNITY_EDITOR + UNITY_ANDROID)
+      Dev     : Android development build    (UNITY_ANDROID + DEVELOPMENT_BUILD)
+      WebGL   : WebGL player (experimental, for S2) - Google.Play.Games assembly not referenced
+  -->
+  <PropertyGroup>
+    <MeowtelRepo Condition="'$(MeowtelRepo)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../..'))</MeowtelRepo>
+    <HarnessRoot>$(MSBuildThisFileDirectory)</HarnessRoot>
+    <UnityRefDir>$(HarnessRoot)lib/unity-patched/</UnityRefDir>
+    <DOTweenDir>$(MeowtelRepo)/Assets/Plugins/Demigiant/</DOTweenDir>
+
+    <Configurations>Android;Editor;Dev;WebGL</Configurations>
+    <Configuration Condition="'$(Configuration)' == ''">Android</Configuration>
+
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <DisableImplicitFrameworkDefines>true</DisableImplicitFrameworkDefines>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <DebugType>none</DebugType>
+    <Optimize>false</Optimize>
+    <Deterministic>true</Deterministic>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- Unity's suppressCommonWarnings + noise that Unity itself does not surface as errors -->
+    <NoWarn>$(NoWarn);CS0169;CS0649;CS0414;CS0067;CS0108;CS0114;CS0162;CS0168;CS0219;CS0672;CS1998;CS4014;CS8321;CS1591;CS1573;CS1570;CS1572;CS1587;CS0436;CS0109;CS0659;CS0661;CS0660;CS8032;CS8618;NU1701;MSB3277</NoWarn>
+    <!-- Obsolete-API warnings (CS0612/CS0618) are hidden unless typecheck.sh is run with its warnings option (HarnessWarnObsolete=true) -->
+    <NoWarn Condition="'$(HarnessWarnObsolete)' != 'true'">$(NoWarn);CS0612;CS0618</NoWarn>
+    <BaseIntermediateOutputPath>$(HarnessRoot)obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
+    <OutputPath>$(HarnessRoot)bin/$(Configuration)/$(MSBuildProjectName)/</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <!-- Unity auto-defines (version, API level, input system, C#) -->
+  <PropertyGroup>
+    <UnityVersionDefines>UNITY_6000_3_5;UNITY_6000_3;UNITY_6000;UNITY_5_3_OR_NEWER;UNITY_5_4_OR_NEWER;UNITY_5_5_OR_NEWER;UNITY_5_6_OR_NEWER;UNITY_2017_1_OR_NEWER;UNITY_2017_2_OR_NEWER;UNITY_2017_3_OR_NEWER;UNITY_2017_4_OR_NEWER;UNITY_2018_1_OR_NEWER;UNITY_2018_2_OR_NEWER;UNITY_2018_3_OR_NEWER;UNITY_2018_4_OR_NEWER;UNITY_2019_1_OR_NEWER;UNITY_2019_2_OR_NEWER;UNITY_2019_3_OR_NEWER;UNITY_2019_4_OR_NEWER;UNITY_2020_1_OR_NEWER;UNITY_2020_2_OR_NEWER;UNITY_2020_3_OR_NEWER;UNITY_2021_1_OR_NEWER;UNITY_2021_2_OR_NEWER;UNITY_2021_3_OR_NEWER;UNITY_2022_1_OR_NEWER;UNITY_2022_2_OR_NEWER;UNITY_2022_3_OR_NEWER;UNITY_2023_1_OR_NEWER;UNITY_2023_2_OR_NEWER;UNITY_2023_3_OR_NEWER;UNITY_6000_0_OR_NEWER;UNITY_6000_1_OR_NEWER;UNITY_6000_2_OR_NEWER;UNITY_6000_3_OR_NEWER</UnityVersionDefines>
+    <UnityCommonDefines>$(UnityVersionDefines);UNITY_64;PLATFORM_ARCH_64;ENABLE_INPUT_SYSTEM;NET_STANDARD_2_0;NET_STANDARD_2_1;NET_STANDARD;NETSTANDARD2_1;NETSTANDARD;CSHARP_7_3_OR_NEWER;CSHARP_7_OR_LATER;TEXTCORE_1_0_OR_NEWER</UnityCommonDefines>
+    <!-- ProjectSettings.asset scriptingDefineSymbols (Android) -->
+    <ProjectScriptingDefines>DOTWEEN;LEVELPLAY_DEPENDENCIES_INSTALLED</ProjectScriptingDefines>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Android'">
+    <PlatformDefines>UNITY_ANDROID;PLATFORM_ANDROID;ENABLE_IL2CPP</PlatformDefines>
+    <HarnessHasGpgs>true</HarnessHasGpgs>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Dev'">
+    <PlatformDefines>UNITY_ANDROID;PLATFORM_ANDROID;ENABLE_IL2CPP;DEVELOPMENT_BUILD;UNITY_ASSERTIONS</PlatformDefines>
+    <HarnessHasGpgs>true</HarnessHasGpgs>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Editor'">
+    <PlatformDefines>UNITY_EDITOR;UNITY_EDITOR_64;UNITY_EDITOR_WIN;UNITY_ANDROID;PLATFORM_ANDROID;ENABLE_MONO;UNITY_ASSERTIONS;DEBUG;TRACE</PlatformDefines>
+    <HarnessHasGpgs>true</HarnessHasGpgs>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'WebGL'">
+    <PlatformDefines>UNITY_WEBGL;PLATFORM_WEBGL;ENABLE_IL2CPP</PlatformDefines>
+    <HarnessHasGpgs>false</HarnessHasGpgs>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DefineConstants>$(UnityCommonDefines);$(ProjectScriptingDefines);$(PlatformDefines);$(ExtraDefines)</DefineConstants>
+  </PropertyGroup>
+
+  <!-- Newtonsoft.Json as shipped by com.unity.nuget.newtonsoft-json 3.2.2 (auto-referenced in Unity; AOT build on players) -->
+  <PropertyGroup>
+    <NewtonsoftDir>$(HarnessRoot)lib/pkgsrc/com.unity.nuget.newtonsoft-json@3.2.2/Runtime/</NewtonsoftDir>
+    <NewtonsoftDll Condition="'$(Configuration)' == 'Editor'">$(NewtonsoftDir)Newtonsoft.Json.dll</NewtonsoftDll>
+    <NewtonsoftDll Condition="'$(Configuration)' != 'Editor'">$(NewtonsoftDir)AOT/Newtonsoft.Json.dll</NewtonsoftDll>
+  </PropertyGroup>
+
+  <!-- UnityEngine 2021.3.33 reference assemblies (nuget: UnityEngine.Modules), de-publicized + Unity 6 members by tools/UnityRefPatcher -->
+  <ItemGroup Condition="'$(HarnessNoUnityRefs)' != 'true'">
+    <Reference Include="$(UnityRefDir)UnityEngine*.dll">
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

@@ -134,9 +134,15 @@ namespace CatHotel.Core
         {
             // --- Consent / RGPD ---
             { "consent.title", "Confidentialité & publicités" },
-            { "consent.body", "Pour soutenir le développement du jeu, Meowtel propose des publicités optionnelles avec récompenses. Acceptez-vous l'utilisation de votre identifiant publicitaire afin d'afficher des publicités personnalisées ? Vous pourrez modifier ce choix à tout moment dans les paramètres." },
+            { "consent.body", "Pour soutenir le développement du jeu, Meowtel propose des publicités optionnelles avec récompenses. Acceptez-vous l'utilisation de votre identifiant publicitaire afin d'afficher des publicités personnalisées ? Vous pourrez modifier ce choix à tout moment dans le menu pause, rubrique « Confidentialité »." },
             { "consent.accept", "Accepter" },
             { "consent.refuse", "Refuser" },
+            { "consent.analytics.title", "Statistiques d'utilisation" },
+            { "consent.analytics.body", "Pour améliorer le jeu, acceptez-vous que Meowtel envoie à Unity Analytics des statistiques d'utilisation (progression, publicités regardées, type d'appareil), liées à un identifiant technique de joueur ? Refuser ne change rien à votre partie. Vous pourrez modifier ce choix à tout moment dans le menu pause, rubrique « Confidentialité »." },
+            { "consent.current", "Votre choix actuel : {0}." },
+            { "consent.state.accepted", "accepté" },
+            { "consent.state.refused", "refusé" },
+            { "ui.privacy", "Confidentialité" },
 
             // --- Cat Info Panel ---
             { "cat.kitten", "Chaton" },
@@ -149,6 +155,10 @@ namespace CatHotel.Core
 
             // --- End Pension Panel ---
             { "pension.bye", "Au revoir {0} !" },
+            { "adoption.title", "Adoption réussie !" },
+            { "adoption.happiness", "Bonheur au moment de l'adoption :" },
+            { "adoption.fee", "Frais d'adoption" },
+            { "adoption.bye", "Bonne vie {0} !" },
 
             // --- Loading ---
             { "ui.loading", "Chargement" },
@@ -185,12 +195,12 @@ namespace CatHotel.Core
             { "tuto.hud.floors", "L'<b>étage</b> actuellement affiché. Utilisez les flèches pour monter et descendre quand vous en aurez débloqué." },
             { "tuto.hud.system", "Le <b>menu pause</b>. Réglages, langue, son, et options du jeu." },
             { "tuto.hud.collectall", "<b>Récupérer toutes les pièces</b> d'un coup. Coût : 5 Cat Coins. Pratique quand l'hôtel se remplit !" },
-            { "tuto.hud.addboost", "Regarder une pub pour <b>doubler vos revenus pendant 60s</b>. Cooldown : 120s entre deux activations." },
+            { "tuto.hud.addboost", "Regarder une pub pour <b>doubler tous vos revenus pendant 5 minutes</b>." },
             { "tuto.hud.nextcat", "Le <b>compte à rebours</b> avant l'arrivée du prochain chat. Plus votre hôtel grandit, plus le rythme s'accélère." },
             { "tuto.hud.shop", "La <b>boutique d'objets</b>. Achetez ici tout ce qu'il faut pour satisfaire les besoins de vos chats." },
             { "tuto.pension", "Des chats arrivent en <b>pension</b> pour un temps déterminé. Leur bonheur doit être le plus élevé possible pour gagner un maximum de Cat Coins !" },
             { "tuto.refuge", "Des chats tristes arriveront par le <b>refuge</b>. Rendez-les heureux pour qu'ils puissent être adoptés !" },
-            { "tuto.unhappy", "Attention : un chat dont le bonheur tombe sous <b>25%</b> voudra partir. Ne le laissez pas filer !" },
+            { "tuto.unhappy", "Attention : un chat dont le bonheur tombe sous <b>20%</b> voudra partir. Ne le laissez pas filer !" },
             { "tuto.firstcat", "Oh ! Votre premier client arrive ! Observez-le..." },
             { "tuto.selectcat", "Tapez sur le chat pour le sélectionner." },
             { "tuto.catinfo", "Voici ses informations : son nom, sa race, son humeur et ses besoins. Gardez un œil dessus !" },
@@ -440,9 +450,15 @@ namespace CatHotel.Core
         {
             // --- Consent / GDPR ---
             { "consent.title", "Privacy & Ads" },
-            { "consent.body", "To support the game's development, Meowtel offers optional rewarded ads. Do you agree to the use of your advertising ID to display personalized ads? You can change this choice at any time in the settings." },
+            { "consent.body", "To support the game's development, Meowtel offers optional rewarded ads. Do you agree to the use of your advertising ID to display personalized ads? You can change this choice at any time from the pause menu, under “Privacy”." },
             { "consent.accept", "Accept" },
             { "consent.refuse", "Decline" },
+            { "consent.analytics.title", "Usage statistics" },
+            { "consent.analytics.body", "To improve the game, do you agree to Meowtel sending usage statistics (progress, ads watched, device type) to Unity Analytics, linked to a technical player identifier? Declining changes nothing in your game. You can change this choice at any time from the pause menu, under “Privacy”." },
+            { "consent.current", "Your current choice: {0}." },
+            { "consent.state.accepted", "accepted" },
+            { "consent.state.refused", "declined" },
+            { "ui.privacy", "Privacy" },
 
             // --- Cat Info Panel ---
             { "cat.kitten", "Kitten" },
@@ -455,6 +471,10 @@ namespace CatHotel.Core
 
             // --- End Pension Panel ---
             { "pension.bye", "Goodbye {0}!" },
+            { "adoption.title", "Adoption complete!" },
+            { "adoption.happiness", "Happiness at adoption:" },
+            { "adoption.fee", "Adoption fee" },
+            { "adoption.bye", "Have a happy life, {0}!" },
 
             // --- Loading ---
             { "ui.loading", "Loading" },
@@ -491,12 +511,12 @@ namespace CatHotel.Core
             { "tuto.hud.floors", "The currently displayed <b>floor</b>. Use the arrows to go up and down once you've unlocked some." },
             { "tuto.hud.system", "The <b>pause menu</b>. Settings, language, sound, and game options." },
             { "tuto.hud.collectall", "<b>Collect all coins</b> at once. Cost: 5 Cat Coins. Handy when the hotel fills up!" },
-            { "tuto.hud.addboost", "Watch an ad to <b>double your revenue for 60s</b>. Cooldown: 120s between two activations." },
+            { "tuto.hud.addboost", "Watch an ad to <b>double all your revenue for 5 minutes</b>." },
             { "tuto.hud.nextcat", "The <b>countdown</b> before the next cat arrives. The more your hotel grows, the faster the rhythm." },
             { "tuto.hud.shop", "The <b>item shop</b>. Buy everything you need here to fulfill your cats' needs." },
             { "tuto.pension", "Cats arrive for <b>boarding</b> for a set time. Keep their happiness as high as possible to earn the most Cat Coins!" },
             { "tuto.refuge", "Sad cats will arrive through the <b>shelter</b>. Make them happy so they can be adopted!" },
-            { "tuto.unhappy", "Warning: a cat whose happiness drops below <b>25%</b> will try to leave. Don't let that happen!" },
+            { "tuto.unhappy", "Warning: a cat whose happiness drops below <b>20%</b> will try to leave. Don't let that happen!" },
             { "tuto.firstcat", "Oh! Your first guest is arriving! Watch..." },
             { "tuto.selectcat", "Tap on the cat to select it." },
             { "tuto.catinfo", "Here's their info: name, breed, mood and needs. Keep an eye on it!" },
@@ -746,9 +766,15 @@ namespace CatHotel.Core
         {
             // --- Consent / DSGVO ---
             { "consent.title", "Datenschutz & Werbung" },
-            { "consent.body", "Zur Unterstützung der Spielentwicklung bietet Meowtel optionale Belohnungswerbung an. Stimmen Sie der Nutzung Ihrer Werbe-ID zur Anzeige personalisierter Werbung zu? Sie können diese Wahl jederzeit in den Einstellungen ändern." },
+            { "consent.body", "Zur Unterstützung der Spielentwicklung bietet Meowtel optionale Belohnungswerbung an. Stimmen Sie der Nutzung Ihrer Werbe-ID zur Anzeige personalisierter Werbung zu? Sie können diese Wahl jederzeit im Pause-Menü unter „Datenschutz“ ändern." },
             { "consent.accept", "Akzeptieren" },
             { "consent.refuse", "Ablehnen" },
+            { "consent.analytics.title", "Nutzungsstatistiken" },
+            { "consent.analytics.body", "Stimmen Sie zu, dass Meowtel zur Verbesserung des Spiels Nutzungsstatistiken (Fortschritt, angesehene Werbung, Gerätetyp) an Unity Analytics sendet, verknüpft mit einer technischen Spielerkennung? Eine Ablehnung ändert nichts an Ihrem Spiel. Sie können diese Wahl jederzeit im Pause-Menü unter „Datenschutz“ ändern." },
+            { "consent.current", "Ihre aktuelle Wahl: {0}." },
+            { "consent.state.accepted", "akzeptiert" },
+            { "consent.state.refused", "abgelehnt" },
+            { "ui.privacy", "Datenschutz" },
 
             // --- Cat Info Panel ---
             { "cat.kitten", "Kätzchen" },
@@ -761,6 +787,10 @@ namespace CatHotel.Core
 
             // --- End Pension Panel ---
             { "pension.bye", "Auf Wiedersehen {0}!" },
+            { "adoption.title", "Adoption erfolgreich!" },
+            { "adoption.happiness", "Glück bei der Adoption:" },
+            { "adoption.fee", "Adoptionsgebühr" },
+            { "adoption.bye", "Alles Gute, {0}!" },
 
             // --- Loading ---
             { "ui.loading", "Lädt" },
@@ -797,12 +827,12 @@ namespace CatHotel.Core
             { "tuto.hud.floors", "Die aktuell angezeigte <b>Etage</b>. Mit den Pfeilen wechselst du zwischen freigeschalteten Etagen." },
             { "tuto.hud.system", "Das <b>Pause-Menü</b>. Einstellungen, Sprache, Ton und Spieloptionen." },
             { "tuto.hud.collectall", "<b>Sammle alle Münzen</b> auf einmal. Kosten: 5 Cat Coins. Praktisch wenn das Hotel voll ist!" },
-            { "tuto.hud.addboost", "Sieh dir eine Werbung an, um <b>deine Einnahmen 60s lang zu verdoppeln</b>. Cooldown: 120s zwischen Aktivierungen." },
+            { "tuto.hud.addboost", "Sieh dir eine Werbung an, um <b>alle deine Einnahmen 5 Minuten lang zu verdoppeln</b>." },
             { "tuto.hud.nextcat", "Der <b>Countdown</b> bis zur nächsten Katze. Je größer dein Hotel, desto schneller der Rhythmus." },
             { "tuto.hud.shop", "Der <b>Objekt-Shop</b>. Hier kaufst du alles, was deine Katzen brauchen." },
             { "tuto.pension", "Katzen kommen für eine festgelegte Zeit in <b>Pension</b>. Halte ihr Glück möglichst hoch, um maximal Cat Coins zu verdienen!" },
             { "tuto.refuge", "Traurige Katzen kommen über das <b>Tierheim</b>. Mach sie glücklich, damit sie adoptiert werden können!" },
-            { "tuto.unhappy", "Achtung: Eine Katze, deren Glück unter <b>25%</b> fällt, will gehen. Lass das nicht zu!" },
+            { "tuto.unhappy", "Achtung: Eine Katze, deren Glück unter <b>20%</b> fällt, will gehen. Lass das nicht zu!" },
             { "tuto.firstcat", "Oh! Dein erster Gast kommt! Beobachte ihn..." },
             { "tuto.selectcat", "Tippe auf die Katze, um sie auszuwählen." },
             { "tuto.catinfo", "Hier sind ihre Infos: Name, Rasse, Stimmung und Bedürfnisse. Behalte sie im Auge!" },
@@ -1050,9 +1080,15 @@ namespace CatHotel.Core
         {
             // --- Consent / RGPD ---
             { "consent.title", "Privacidad y anuncios" },
-            { "consent.body", "Para apoyar el desarrollo del juego, Meowtel ofrece anuncios opcionales con recompensa. ¿Aceptas el uso de tu identificador publicitario para mostrar anuncios personalizados? Puedes cambiar esta elección en cualquier momento en los ajustes." },
+            { "consent.body", "Para apoyar el desarrollo del juego, Meowtel ofrece anuncios opcionales con recompensa. ¿Aceptas el uso de tu identificador publicitario para mostrar anuncios personalizados? Puedes cambiar esta elección en cualquier momento en el menú de pausa, en «Privacidad»." },
             { "consent.accept", "Aceptar" },
             { "consent.refuse", "Rechazar" },
+            { "consent.analytics.title", "Estadísticas de uso" },
+            { "consent.analytics.body", "Para mejorar el juego, ¿aceptas que Meowtel envíe a Unity Analytics estadísticas de uso (progreso, anuncios vistos, tipo de dispositivo), vinculadas a un identificador técnico de jugador? Rechazar no cambia nada en tu partida. Puedes cambiar esta elección en cualquier momento en el menú de pausa, en «Privacidad»." },
+            { "consent.current", "Tu elección actual: {0}." },
+            { "consent.state.accepted", "aceptada" },
+            { "consent.state.refused", "rechazada" },
+            { "ui.privacy", "Privacidad" },
 
             // --- Cat Info Panel ---
             { "cat.kitten", "Gatito" },
@@ -1065,6 +1101,10 @@ namespace CatHotel.Core
 
             // --- End Pension Panel ---
             { "pension.bye", "¡Adiós {0}!" },
+            { "adoption.title", "¡Adopción completada!" },
+            { "adoption.happiness", "Felicidad al ser adoptado:" },
+            { "adoption.fee", "Tasa de adopción" },
+            { "adoption.bye", "¡Que seas muy feliz, {0}!" },
 
             // --- Loading ---
             { "ui.loading", "Cargando" },
@@ -1101,12 +1141,12 @@ namespace CatHotel.Core
             { "tuto.hud.floors", "El <b>piso</b> mostrado actualmente. Usa las flechas para subir y bajar cuando los desbloquees." },
             { "tuto.hud.system", "El <b>menú de pausa</b>. Ajustes, idioma, sonido y opciones." },
             { "tuto.hud.collectall", "<b>Recoger todas las monedas</b> de una vez. Coste: 5 Cat Coins. ¡Útil cuando el hotel se llena!" },
-            { "tuto.hud.addboost", "Ve un anuncio para <b>duplicar tus ingresos durante 60s</b>. Cooldown: 120s entre activaciones." },
+            { "tuto.hud.addboost", "Ve un anuncio para <b>duplicar todos tus ingresos durante 5 minutos</b>." },
             { "tuto.hud.nextcat", "La <b>cuenta atrás</b> hasta el próximo gato. Cuanto más crezca tu hotel, más rápido el ritmo." },
             { "tuto.hud.shop", "La <b>tienda de objetos</b>. Compra aquí todo lo que tus gatos necesitan." },
             { "tuto.pension", "Los gatos llegan en <b>pensión</b> por un tiempo determinado. ¡Mantén su felicidad alta para ganar el máximo de Cat Coins!" },
             { "tuto.refuge", "Gatos tristes llegan por el <b>refugio</b>. ¡Hazlos felices para que puedan ser adoptados!" },
-            { "tuto.unhappy", "Atención: un gato cuya felicidad baje del <b>25%</b> querrá irse. ¡No lo dejes escapar!" },
+            { "tuto.unhappy", "Atención: un gato cuya felicidad baje del <b>20%</b> querrá irse. ¡No lo dejes escapar!" },
             { "tuto.firstcat", "¡Oh! ¡Llega tu primer huésped! Obsérvalo..." },
             { "tuto.selectcat", "Toca al gato para seleccionarlo." },
             { "tuto.catinfo", "Aquí tienes su info: nombre, raza, humor y necesidades. ¡Vigílalo!" },
@@ -1354,9 +1394,15 @@ namespace CatHotel.Core
         {
             // --- Consent / LGPD ---
             { "consent.title", "Privacidade e anúncios" },
-            { "consent.body", "Para apoiar o desenvolvimento do jogo, o Meowtel oferece anúncios opcionais com recompensa. Você aceita o uso do seu identificador de publicidade para exibir anúncios personalizados? Você pode alterar esta escolha a qualquer momento nas configurações." },
+            { "consent.body", "Para apoiar o desenvolvimento do jogo, o Meowtel oferece anúncios opcionais com recompensa. Você aceita o uso do seu identificador de publicidade para exibir anúncios personalizados? Você pode alterar esta escolha a qualquer momento no menu de pausa, em “Privacidade”." },
             { "consent.accept", "Aceitar" },
             { "consent.refuse", "Recusar" },
+            { "consent.analytics.title", "Estatísticas de uso" },
+            { "consent.analytics.body", "Para melhorar o jogo, você aceita que o Meowtel envie ao Unity Analytics estatísticas de uso (progresso, anúncios assistidos, tipo de aparelho), vinculadas a um identificador técnico de jogador? Recusar não muda nada no seu jogo. Você pode alterar esta escolha a qualquer momento no menu de pausa, em “Privacidade”." },
+            { "consent.current", "Sua escolha atual: {0}." },
+            { "consent.state.accepted", "aceita" },
+            { "consent.state.refused", "recusada" },
+            { "ui.privacy", "Privacidade" },
 
             // --- Cat Info Panel ---
             { "cat.kitten", "Gatinho" },
@@ -1369,6 +1415,10 @@ namespace CatHotel.Core
 
             // --- End Pension Panel ---
             { "pension.bye", "Tchau {0}!" },
+            { "adoption.title", "Adoção concluída!" },
+            { "adoption.happiness", "Felicidade na adoção:" },
+            { "adoption.fee", "Taxa de adoção" },
+            { "adoption.bye", "Seja muito feliz, {0}!" },
 
             // --- Loading ---
             { "ui.loading", "Carregando" },
@@ -1405,12 +1455,12 @@ namespace CatHotel.Core
             { "tuto.hud.floors", "O <b>andar</b> exibido atualmente. Use as setas para subir e descer quando tiver desbloqueado." },
             { "tuto.hud.system", "O <b>menu de pausa</b>. Configurações, idioma, som e opções." },
             { "tuto.hud.collectall", "<b>Recolher todas as moedas</b> de uma vez. Custo: 5 Cat Coins. Útil quando o hotel está cheio!" },
-            { "tuto.hud.addboost", "Veja um anúncio para <b>dobrar seus ganhos por 60s</b>. Cooldown: 120s entre ativações." },
+            { "tuto.hud.addboost", "Veja um anúncio para <b>dobrar todos os seus ganhos por 5 minutos</b>." },
             { "tuto.hud.nextcat", "A <b>contagem regressiva</b> até o próximo gato. Quanto maior seu hotel, mais rápido o ritmo." },
             { "tuto.hud.shop", "A <b>loja de objetos</b>. Compre aqui tudo que seus gatos precisam." },
             { "tuto.pension", "Gatos chegam em <b>hospedagem</b> por um tempo determinado. Mantenha a felicidade deles alta para ganhar o máximo de Cat Coins!" },
             { "tuto.refuge", "Gatos tristes chegam pelo <b>abrigo</b>. Deixe-os felizes para que possam ser adotados!" },
-            { "tuto.unhappy", "Atenção: um gato cuja felicidade cair abaixo de <b>25%</b> vai querer ir embora. Não deixe escapar!" },
+            { "tuto.unhappy", "Atenção: um gato cuja felicidade cair abaixo de <b>20%</b> vai querer ir embora. Não deixe escapar!" },
             { "tuto.firstcat", "Oh! Seu primeiro cliente está chegando! Observe-o..." },
             { "tuto.selectcat", "Toque no gato para selecioná-lo." },
             { "tuto.catinfo", "Aqui estão suas informações: nome, raça, humor e necessidades. Fique de olho!" },

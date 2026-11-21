@@ -68,43 +68,13 @@ namespace CatHotel.Editor
 
             string J = "tuto.speaker.jasper";
 
+            // Sequence v2 (S1.2): the first cat arrives after 2 bubbles; the HUD walkthrough is cut
+            // (the actions teach the HUD), the pension/refuge/exit tour and the level-up come AFTER
+            // the core loop. Keep Data/TutorialFirstTime.asset identical to what this builds.
+
             // --- Intro ---
             Step(J, jasper01, "tuto.welcome",  TutorialTrigger.WaitForTap);
             Step(J, jasper02, "tuto.explain",  TutorialTrigger.WaitForTap);
-
-            // --- Floors + level-up explanation ---
-            Step(J, jasper01, "tuto.floors",         TutorialTrigger.WaitForTap);
-            Step(J, jasper02, "tuto.levelup.intro",  TutorialTrigger.WaitForTap);
-            Step(J, jasper01, "tuto.levelup.xp",     TutorialTrigger.WaitForTap);
-            Step(J, jasper02, "tuto.levelup.cond",   TutorialTrigger.WaitForTap);
-            Step(J, jasper01, "tuto.levelup.tap",    TutorialTrigger.WaitForLevelPanelOpened,
-                onS: TutorialAction.HighlightGlobalPex);
-            // Wait until the player closes the panel themselves (no auto-tap-advance)
-            Step(J, jasper02, "tuto.levelup.done",   TutorialTrigger.WaitForLevelPanelClosed,
-                onC: TutorialAction.RestoreHighlight);
-
-            // --- HUD walkthrough: explain each top-level button / zone ---
-            // Targets are PANEL containers (parent of label) so the visual zone pulses, not just the text.
-            HudStep(J, jasper01, "tuto.hud.coins",       "Catcoins");
-            HudStep(J, jasper02, "tuto.hud.purrls",      "Puurls");
-            HudStep(J, jasper01, "tuto.hud.capacity",    "Capacity");
-            HudStep(J, jasper02, "tuto.hud.comfort",     "Comfort");
-            HudStep(J, jasper01, "tuto.hud.floors",      "Floors");
-            // System / CollectAllAction / AddBoost are on the LEFT side of the screen
-            // (where the bubble normally sits) → display the bubble on the right instead.
-            HudStep(J, jasper02, "tuto.hud.system",      "System",           bubbleRight: true);
-            HudStep(J, jasper01, "tuto.hud.collectall",  "CollectAllAction", bubbleRight: true);
-            HudStep(J, jasper02, "tuto.hud.addboost",    "AddBoost",         bubbleRight: true);
-            HudStep(J, jasper01, "tuto.hud.nextcat",     "NextCat");
-            HudStep(J, jasper02, "tuto.hud.shop",        "ShopAction");
-
-            // --- Tour: pension / refuge / exit ---
-            Step(J, jasper02, "tuto.pension",  TutorialTrigger.WaitForTap,
-                onS: TutorialAction.FocusCameraOnPensionEntrance, onC: TutorialAction.ReleaseCameraFocus);
-            Step(J, jasper01, "tuto.refuge",   TutorialTrigger.WaitForTap,
-                onS: TutorialAction.FocusCameraOnRefugeEntrance, onC: TutorialAction.ReleaseCameraFocus);
-            Step(J, jasper02, "tuto.unhappy",  TutorialTrigger.WaitForTap,
-                onS: TutorialAction.FocusCameraOnUnhappyExit, onC: TutorialAction.ReleaseCameraFocus);
 
             // --- Spawn pension cat ---
             Step("", null, "", TutorialTrigger.Action,
@@ -114,8 +84,8 @@ namespace CatHotel.Editor
             Step(J, jasper01, "tuto.catinfo",      TutorialTrigger.WaitForTap, onC: TutorialAction.ReleaseCameraFocus);
             Step(J, jasper02, "tuto.pensiontime",  TutorialTrigger.WaitForTap);
 
-            // --- Let the game breathe 5s ---
-            Step("", null, "", TutorialTrigger.WaitForDelay, delay: 5f);
+            // --- Short breath ---
+            Step("", null, "", TutorialTrigger.WaitForDelay, delay: 3f);
 
             // --- Despawn pension cat + Spawn refuge cat (hungry) ---
             Step("", null, "", TutorialTrigger.Action,
@@ -124,7 +94,8 @@ namespace CatHotel.Editor
                 onS: TutorialAction.SpawnRefugeCatHungry, onC: TutorialAction.FocusCameraOnLastSpawnedCat);
             Step(J, jasper01, "tuto.refugecat", TutorialTrigger.WaitForTap);
 
-            // --- Food ---
+            // --- Food (point at the shop button first) ---
+            HudStep(J, jasper02, "tuto.hud.shop", "ShopAction");
             Step(J, jasper02, "tuto.buyfood", TutorialTrigger.WaitForObjectPlaced,
                 onS: TutorialAction.EnableShopFood, reqCat: ObjectCategory.Food);
             Step(J, jasper01, "tuto.waiteat", TutorialTrigger.WaitForCatServiceUsed);
@@ -157,6 +128,23 @@ namespace CatHotel.Editor
             Step(J, jasper02, "tuto.bored", TutorialTrigger.WaitForObjectPlaced,
                 onS: TutorialAction.EnableShopBalls, reqCat: ObjectCategory.Play);
             Step(J, jasper01, "tuto.waitplay", TutorialTrigger.WaitForCatServiceUsed);
+
+            // --- Tour: pension / refuge / exit ---
+            Step(J, jasper02, "tuto.pension",  TutorialTrigger.WaitForTap,
+                onS: TutorialAction.FocusCameraOnPensionEntrance, onC: TutorialAction.ReleaseCameraFocus);
+            Step(J, jasper01, "tuto.refuge",   TutorialTrigger.WaitForTap,
+                onS: TutorialAction.FocusCameraOnRefugeEntrance, onC: TutorialAction.ReleaseCameraFocus);
+            Step(J, jasper02, "tuto.unhappy",  TutorialTrigger.WaitForTap,
+                onS: TutorialAction.FocusCameraOnUnhappyExit, onC: TutorialAction.ReleaseCameraFocus);
+
+            // --- Level-up (how the hotel grows) ---
+            Step(J, jasper02, "tuto.levelup.intro",  TutorialTrigger.WaitForTap);
+            Step(J, jasper02, "tuto.levelup.cond",   TutorialTrigger.WaitForTap);
+            Step(J, jasper01, "tuto.levelup.tap",    TutorialTrigger.WaitForLevelPanelOpened,
+                onS: TutorialAction.HighlightGlobalPex);
+            // Wait until the player closes the panel themselves (no auto-tap-advance)
+            Step(J, jasper02, "tuto.levelup.done",   TutorialTrigger.WaitForLevelPanelClosed,
+                onC: TutorialAction.RestoreHighlight);
 
             // --- Fin ---
             Step(J, jasper02, "tuto.complete", TutorialTrigger.WaitForTap,

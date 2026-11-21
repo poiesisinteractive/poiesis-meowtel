@@ -1,0 +1,3 @@
+<Project>
+  <!-- Isolates the helper tools from the harness-wide Directory.Build.props (Unity refs, netstandard2.1, C# 9). -->
+</Project>

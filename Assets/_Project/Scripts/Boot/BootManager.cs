@@ -106,15 +106,16 @@ namespace CatHotel.Boot
                 LogSaveState(CloudSaveManager.Instance);
             }
 
-            // Wait for GDPR consent choice (popup in Boot scene) before initializing ads
-            if (!ConsentManager.HasMadeChoice)
+            // Wait for both GDPR choices (ads, then analytics — popup in Boot scene) before initializing ads
+            if (!ConsentManager.HasMadeAllChoices)
             {
-                Debug.Log("[Boot] Waiting for user GDPR consent choice...");
-                while (!ConsentManager.HasMadeChoice)
+                Debug.Log("[Boot] Waiting for user GDPR consent choices...");
+                while (!ConsentManager.HasMadeAllChoices)
                 {
                     yield return null;
                 }
-                Debug.Log($"[Boot] Consent received: {(ConsentManager.ConsentGiven ? "accepted" : "refused")}");
+                Debug.Log($"[Boot] Consent received: ads={(ConsentManager.ConsentGiven ? "accepted" : "refused")}, " +
+                          $"analytics={(ConsentManager.AnalyticsConsentGiven ? "accepted" : "refused")}");
             }
 
             // Initialize Ads (non-blocking)
@@ -137,8 +138,9 @@ namespace CatHotel.Boot
             var p = mgr.Progression;
             string lastSave = string.IsNullOrEmpty(p?.lastSaveTime) ? "never" : p.lastSaveTime;
             string source = mgr.IsCloudAvailable ? "cloud" : "local-only";
-            Debug.Log(
-                $"[Boot] Save state — source={source}, hasSave={mgr.HasPersistedSave}, " +
+            DevLog.Always(
+                $"[Boot] Save state — env={AuthManager.Instance?.EnvironmentName ?? "n/a"}, " +
+                $"source={source}, hasSave={mgr.HasPersistedSave}, " +
                 $"pendingSync={mgr.HasPendingSync}, lastSaveTime={lastSave}, " +
                 $"coins={p?.coins}, rep={p?.reputationLevel}, " +
                 $"cats={p?.cats?.Count ?? 0}, objects={p?.placedObjects?.Count ?? 0}");

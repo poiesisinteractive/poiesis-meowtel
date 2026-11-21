@@ -19,8 +19,10 @@ tâche (`S1.2`…) sont à reprendre dans les branches, PR et commits.
   5 langues (fr, en, de, es, pt).
 - **Sauvegarde** : nouveaux champs avec une valeur par défaut ; ne jamais renommer ni supprimer un champ.
 - **SDK de plateforme** sous `#if UNITY_ANDROID` / `UNITY_WEBGL` / `UNITY_IOS`.
-- **Unity ne tourne pas dans les sessions cloud** : chaque PR liste les fichiers modifiés, les menus
-  éditeur à exécuter et les étapes de test (Play Mode, appareil Android). Ne jamais présenter comme testé
-  du code qui n'a pas été exécuté.
+- **Unity ne tourne pas dans les sessions cloud** : vérifier chaque modification de code avec
+  `Tools/TypeCheck/typecheck.sh -c all` (compilation sans Unity, voir son README ; SDK .NET 8 requis), et
+  lister dans chaque PR les fichiers modifiés, les menus éditeur à exécuter et les étapes de test (Play Mode,
+  appareil Android). Une compilation OK n'est pas un test : ne jamais présenter comme testé du code qui n'a
+  pas été exécuté.
 - **Dépôt public** : aucune valeur de secret, aucun identifiant de service, aucun chiffre de revenus.
 - **Package id immuable** : `com.royalpourceaustudios.meowtel`.

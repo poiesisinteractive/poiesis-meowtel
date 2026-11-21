@@ -109,6 +109,9 @@ et fenêtre d'aide.
 
 ## Travailler avec Claude Code
 
+`Tools/TypeCheck/` compile le code du jeu sans Unity (SDK .NET 8), contre les vraies sources des packages :
+`Tools/TypeCheck/typecheck.sh -c all`. Voir [Tools/TypeCheck/README.md](Tools/TypeCheck/README.md).
+
 Le skill **`meowtel`** du plugin interne `poiesis-skills` porte l'état réel du jeu (architecture,
 économie, assets inexploités, bugs connus) et la roadmap en cours. Voir aussi [CLAUDE.md](CLAUDE.md).
 

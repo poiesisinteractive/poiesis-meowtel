@@ -26,6 +26,7 @@ namespace CatHotel.Tutorial
         private bool _running;
         private bool _waitingForAction;
         private CatEntity _lastSpawnedCat;
+        private float _activeSeconds; // time spent in the tutorial this session (analytics)
 
         // UI elements disabled during the tutorial (restored when done)
         private readonly List<GameObject> _disabledUI = new();
@@ -41,6 +42,11 @@ namespace CatHotel.Tutorial
         private void Awake()
         {
             Instance = this;
+        }
+
+        private void Update()
+        {
+            if (_running) _activeSeconds += Time.deltaTime;
         }
 
         /// <summary>
@@ -82,6 +88,7 @@ namespace CatHotel.Tutorial
             _currentStep = Mathf.Clamp(resumeFromStep, 0, _sequence.StepCount);
             if (_currentStep >= _sequence.StepCount) return; // already completed
 
+            _activeSeconds = 0f;
             _running = true;
             Debug.Log($"[Tutorial] Starting from step {_currentStep}/{_sequence.StepCount}");
             DisableGameUI();
@@ -117,6 +124,7 @@ namespace CatHotel.Tutorial
             while (_currentStep < _sequence.StepCount)
             {
                 var step = _sequence.steps[_currentStep];
+                GameAnalytics.TutorialStep(_currentStep, step.AnalyticsId);
 
                 // Execute start action (may spawn cat, lock camera, etc.)
                 ExecuteAction(step.actionOnStart, step);
@@ -142,8 +150,8 @@ namespace CatHotel.Tutorial
                 // --- Dialogue step ---
                 if (step.HasDialogue)
                 {
-                    // Show "Skip tutorial" link only on the very first step
-                    bool showSkip = _currentStep == 0;
+                    // "Skip tutorial" is offered on every dialogue step (with a confirmation popup)
+                    const bool showSkip = true;
                     _narrationUI.Show(step.speakerLabelKey, step.speakerPortrait, step.textKey,
                         showSkip, step.bubbleOnRight);
                 }
@@ -185,6 +193,7 @@ namespace CatHotel.Tutorial
 
             // Tutorial complete
             _running = false;
+            GameAnalytics.TutorialComplete(Mathf.RoundToInt(_activeSeconds));
             RestoreGameUI();
             ClearShopFilter();
             UnfreezeAllCats();
@@ -220,6 +229,7 @@ namespace CatHotel.Tutorial
             if (!_running) return;
 
             Debug.Log("[Tutorial] Skipped by player");
+            GameAnalytics.TutorialSkip(_currentStep); // before _currentStep is overwritten
 
             // Mark as complete
             _currentStep = _sequence != null ? _sequence.StepCount : 0;
@@ -239,7 +249,14 @@ namespace CatHotel.Tutorial
             // Release camera focus if any
             if (_cameraFocus != null) _cameraFocus.Release();
 
-            // Restore game state
+            // Restore game state (skip can now happen during a highlight step).
+            // Undo the highlight BEFORE RestoreGameUI, which re-enables the UI hidden by the tutorial
+            // (e.g. ShopAction is both hidden by DisableGameUI and shown for its highlight).
+            RestoreDimmedHud();
+            StopPulse();
+            foreach (var go in _temporarilyEnabledForHighlight)
+                if (go != null) go.SetActive(false);
+            _temporarilyEnabledForHighlight.Clear();
             RestoreGameUI();
             ClearShopFilter();
             UnfreezeAllCats();

@@ -2,8 +2,10 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using TMPro;
 using DG.Tweening;
 using CatHotel.Audio;
+using CatHotel.Core;
 using CatHotel.Hotel;
 using CatHotel.Services;
 
@@ -25,8 +27,11 @@ namespace CatHotel.UI
         private RectTransform _backToGameRect;
         private RectTransform _paramsRect;
         private RectTransform _mainMenuRect;
+        private RectTransform _privacyRect;   // created at runtime (no scene edit)
+        private TMP_Text _privacyLabel;
 
         private ParametersPanel _parametersPanel;
+        private ConsentPanel _consentPanel;   // instantiated on demand from Resources
 
         public bool IsOpen => _isOpen;
 
@@ -66,6 +71,7 @@ namespace CatHotel.UI
             AddJuice(_backToGameRect);
             AddJuice(_paramsRect);
             AddJuice(_mainMenuRect);
+            _privacyRect = CreatePrivacyOption();
 
             // Get or add ParametersPanel on same object
             _parametersPanel = GetComponent<ParametersPanel>();
@@ -110,6 +116,14 @@ namespace CatHotel.UI
                 RectTransformUtility.RectangleContainsScreenPoint(_paramsRect, screenPos, null))
             {
                 OpenParameters();
+                return;
+            }
+
+            // Privacy => re-ask the GDPR choices (the consent popup promises this entry)
+            if (_privacyRect != null &&
+                RectTransformUtility.RectangleContainsScreenPoint(_privacyRect, screenPos, null))
+            {
+                OpenPrivacy();
                 return;
             }
 
@@ -179,6 +193,73 @@ namespace CatHotel.UI
             }
 
             LoadingScreen.TransitionTo("Boot", () => Time.timeScale = 1f);
+        }
+
+        // ---------- Privacy (B-14) ----------
+
+        /// <summary>
+        /// Adds a "Privacy" option above "Main menu" by cloning that option. The options sit in a
+        /// VerticalLayoutGroup, so the container grows by one slot to keep the same spacing.
+        /// </summary>
+        private RectTransform CreatePrivacyOption()
+        {
+            var template = _mainMenuRect;
+            var container = template != null ? template.parent as RectTransform : null;
+            if (container == null) return null;
+
+            int slots = container.childCount;
+            float slotHeight = slots > 0 ? container.rect.height / slots : template.rect.height;
+
+            var go = Instantiate(template.gameObject, container, false);
+            go.name = "PrivacyOption";
+            go.transform.SetSiblingIndex(template.GetSiblingIndex());
+            container.sizeDelta += new Vector2(0f, slotHeight);
+
+            _privacyLabel = go.GetComponentInChildren<TMP_Text>(true);
+            if (_privacyLabel != null) _privacyLabel.gameObject.name = "PrivacyLabel";
+            ApplyPrivacyLabel();
+            LocalizedStrings.OnLanguageChanged += ApplyPrivacyLabel;
+
+            return go.GetComponent<RectTransform>();
+        }
+
+        private void ApplyPrivacyLabel()
+        {
+            if (_privacyLabel != null) _privacyLabel.text = LocalizedStrings.Get("ui.privacy");
+        }
+
+        private void OnDestroy()
+        {
+            LocalizedStrings.OnLanguageChanged -= ApplyPrivacyLabel;
+        }
+
+        private void OpenPrivacy()
+        {
+            var panel = GetConsentPanel();
+            if (panel == null) return;
+            CloseKeepPaused();
+            panel.ShowForReview(Open); // back to this menu (still paused) once answered
+        }
+
+        private ConsentPanel GetConsentPanel()
+        {
+            if (_consentPanel != null) return _consentPanel;
+
+            var prefab = Resources.Load<GameObject>(ConsentPanel.ResourcePath);
+            var canvas = _panel != null ? _panel.GetComponentInParent<Canvas>(true) : null;
+            if (prefab == null || canvas == null)
+            {
+                Debug.LogWarning("[Options] Consent panel prefab or canvas not found");
+                return null;
+            }
+
+            var go = Instantiate(prefab, canvas.rootCanvas.transform, false);
+            go.name = "ConsentPanel";
+            // The component lives on the Boot scene instance, not in the prefab: add it here.
+            // Its Awake auto-wires the labels/buttons and hides the popup (choices already made).
+            _consentPanel = go.GetComponent<ConsentPanel>();
+            if (_consentPanel == null) _consentPanel = go.AddComponent<ConsentPanel>();
+            return _consentPanel;
         }
 
         private void OpenParameters()

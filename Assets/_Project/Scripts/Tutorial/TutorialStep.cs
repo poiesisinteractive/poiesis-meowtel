@@ -74,5 +74,8 @@ namespace CatHotel.Tutorial
         public TutorialAction actionOnComplete;
 
         public bool HasDialogue => !string.IsNullOrEmpty(textKey);
+
+        /// <summary>Stable id for analytics (survives reordering): the text key, or trigger/actions for silent steps.</summary>
+        public string AnalyticsId => HasDialogue ? textKey : $"{trigger}:{actionOnStart}:{actionOnComplete}";
     }
 }

@@ -80,6 +80,11 @@ namespace CatHotel.Hotel
         public GameConfig Config => _config;
         public EconomyManager Economy => _economy;
         public ReputationManager Reputation => _reputation;
+
+        // Active play time in the hotel (saved), for analytics
+        private int _playTimeSeconds;
+        private float _playTimeFraction;
+        public int PlayTimeSeconds => _playTimeSeconds;
         public int CatCount => _cats.Count;
         public float ArrivalTimer => _arrivalTimer;
 
@@ -89,6 +94,7 @@ namespace CatHotel.Hotel
         private void OnDestroy()
         {
             LocalizedStrings.OnLanguageChanged -= RefreshDescriptions;
+            if (_reputation != null) _reputation.OnLevelChanged -= OnReputationLevelUp;
             _breedRegistry?.UnloadAll();
         }
 
@@ -144,15 +150,32 @@ namespace CatHotel.Hotel
                     CloudSaveManager.Instance.LoadFromLocal();
             }
 
-            // If the previous session ended while the tutorial was still in progress,
-            // wipe the save so the player must redo the tutorial from scratch (and the
-            // game state isn't half-set from a partial tutorial run).
+            // The previous session ended while the tutorial was still in progress (B-2).
+            // Never wipe the save: the tutorial's transient state (frozen cats, shop filter,
+            // highlights) can't be resumed mid-way, so either
+            // - the player already built something → the tutorial is marked complete;
+            // - otherwise → the tutorial restarts from the beginning, the save is kept.
             if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.IsLoaded
                 && CloudSaveManager.Instance.HasPersistedSave
                 && !CloudSaveManager.Instance.Progression.tutorialComplete)
             {
-                Debug.Log("[Hotel] Tutorial was incomplete on quit — wiping save to restart it.");
-                CloudSaveManager.Instance.ResetAllData();
+                var prog = CloudSaveManager.Instance.Progression;
+                bool hotelStarted = (prog.placedObjects != null && prog.placedObjects.Count > 0)
+                    || prog.reputationLevel > 0;
+                if (hotelStarted)
+                {
+                    Debug.Log("[Hotel] Tutorial was incomplete on quit, hotel already started — marking it complete.");
+                    prog.tutorialComplete = true;
+                    CloudSaveManager.Instance.SaveProgressionImmediate();
+                }
+                else
+                {
+                    // Nothing built yet: the only cats are the previous run's tutorial cats, which the
+                    // tutorial spawns again — drop them so they aren't duplicated.
+                    Debug.Log("[Hotel] Tutorial was incomplete on quit — restarting it (save kept).");
+                    prog.tutorialStepIndex = 0;
+                    prog.cats?.Clear();
+                }
             }
 
             // Init economy + reputation from save if available, otherwise defaults
@@ -174,16 +197,15 @@ namespace CatHotel.Hotel
                     _reputation.Init(savedProg.reputationLevel, savedProg.reputationXp);
                 else
                     _reputation.Init(0, 0);
+                // Init() never raises OnLevelChanged, so loading a save doesn't emit level_up
+                _reputation.OnLevelChanged += OnReputationLevelUp;
             }
+            _playTimeSeconds = savedProg != null ? Mathf.Max(0, savedProg.playTimeSeconds) : 0;
 
             // Hook into ads (already initialized by Boot, or init here as fallback)
             var adManager = AdManager.Instance ?? FindAnyObjectByType<AdManager>();
             if (adManager != null)
-            {
-                adManager.OnAdCompleted += OnRewardedAdCompleted;
-                if (!adManager.IsAdReady)
-                    adManager.InitializeAds(); // fallback if Boot didn't run
-            }
+                adManager.InitializeAds(); // idempotent: fallback if Boot didn't run
 
             // Wait one frame for GridRenderer.Start() to build the room and entrances
             yield return null;
@@ -201,7 +223,10 @@ namespace CatHotel.Hotel
             {
                 var save = CloudSaveManager.Instance;
                 bool isNewGame = save == null || !save.IsLoaded || !save.HasPersistedSave;
-                int resumeStep = isNewGame ? 0 : save.Progression.tutorialStepIndex;
+                // Completed tutorial → past the last step, whatever the sequence length
+                int resumeStep = isNewGame ? 0
+                    : save.Progression.tutorialComplete ? int.MaxValue
+                    : save.Progression.tutorialStepIndex;
                 tutMgr.Begin(resumeStep);
             }
             else
@@ -220,6 +245,15 @@ namespace CatHotel.Hotel
         private void Update()
         {
             if (_config == null) return;
+
+            // Scaled time: 0 while paused (timeScale 0), capped per frame, so background time is excluded
+            _playTimeFraction += Time.deltaTime;
+            if (_playTimeFraction >= 1f)
+            {
+                int whole = (int)_playTimeFraction;
+                _playTimeSeconds += whole;
+                _playTimeFraction -= whole;
+            }
 
             UpdateArrivals();
 
@@ -250,6 +284,10 @@ namespace CatHotel.Hotel
             }
         }
 
+        /// <summary>Rewarded-ad revenue boost (×2 while active) — applies to every coin income.</summary>
+        private static float CurrentBoostMultiplier =>
+            RevenueBoostManager.Instance != null ? RevenueBoostManager.Instance.BoostMultiplier : 1f;
+
         private void TickPassiveIncome()
         {
             if (_economy == null || _gridRenderer == null) return;
@@ -258,16 +296,17 @@ namespace CatHotel.Hotel
             foreach (var cat in _cats)
             {
                 if (cat.Entity == null || cat.Entity.FloorIndex == visibleFloor) continue;
-                if (cat.State == CatState.Leaving || cat.State == CatState.Pickup) continue;
+                if (cat.State == CatState.Leaving || cat.State == CatState.Pickup
+                    || cat.State == CatState.Adopted) continue;
                 float happiness = cat.Happiness != null ? cat.Happiness.Value : 50f;
                 // Happier hidden cats earn more; unhappy ones still trickle a small amount.
                 total += PassiveIncomePerCat * (happiness / 100f);
             }
-            int coins = Mathf.RoundToInt(total);
+            int coins = Mathf.RoundToInt(total * CurrentBoostMultiplier);
             if (coins > 0)
             {
                 _economy.AddCoins(coins);
-                Debug.Log($"[Hotel] Passive income tick: +{coins} coins from hidden floors.");
+                DevLog.Log($"[Hotel] Passive income tick: +{coins} coins from hidden floors.");
             }
         }
 
@@ -453,12 +492,19 @@ namespace CatHotel.Hotel
                     cat.HappinessSamples++;
                 }
 
-                // Departure check (skip cats already leaving, being picked up, or still arriving)
+                // Departure check (skip cats already leaving, being picked up/adopted, or still arriving)
                 if (cat.Happiness != null && cat.Happiness.ShouldLeave
                     && cat.State != CatState.Leaving && cat.State != CatState.Pickup
-                    && cat.State != CatState.Arriving)
+                    && cat.State != CatState.Adopted && cat.State != CatState.Arriving)
                 {
                     StartUnhappyDeparture(cat);
+                    continue;
+                }
+
+                // Refuge: an adopter comes after a continuous happy period
+                if (cat.Mode == CatMode.Refuge)
+                {
+                    UpdateAdoption(cat, dt);
                     continue;
                 }
 
@@ -477,12 +523,11 @@ namespace CatHotel.Hotel
         /// <summary>Called when a cat finishes using a service object. Spawns a floating coin.</summary>
         private void OnCatServiceUsed(CatInstance cat)
         {
-            Debug.Log($"[Hotel] OnCatServiceUsed for {cat.CatName}, entity={cat.Entity != null}, happiness={cat.Happiness?.Value}, isUnhappy={cat.Happiness?.IsUnhappy}");
+            DevLog.Log($"[Hotel] OnCatServiceUsed for {cat.CatName}, entity={cat.Entity != null}, happiness={cat.Happiness?.Value}, isUnhappy={cat.Happiness?.IsUnhappy}");
             Tutorial.TutorialManager.Instance?.NotifyEvent(Tutorial.TutorialTrigger.WaitForCatServiceUsed);
             if (cat.Entity == null || cat.Happiness == null) return;
             if (cat.Happiness.IsUnhappy) return;
 
-            Debug.Log($"[Hotel] Calling ProcessRevenueTick for {cat.CatName}");
             _economy.ProcessRevenueTick(
                 cat.Happiness, cat.Breed, cat.Entity.transform, cat.IsSpecial);
         }
@@ -719,8 +764,9 @@ namespace CatHotel.Hotel
             // Calculate payment
             float happiness = cat.Happiness.Value;
             float avgHappiness = cat.AverageHappiness;
+            bool boosted = CurrentBoostMultiplier > 1f; // captured now: the boost may expire before collect
             float payment = _config.pensionBaseRate * cat.PensionDuration * (happiness / 100f)
-                * cat.Breed.revenueMultiplier;
+                * cat.Breed.revenueMultiplier * CurrentBoostMultiplier;
             int baseCoins = Mathf.RoundToInt(payment);
 
             int tipCoins = 0;
@@ -748,6 +794,8 @@ namespace CatHotel.Hotel
                 }, (finalCoins) =>
                 {
                     _economy.AddCoins(finalCoins);
+                    GameAnalytics.PensionComplete(Mathf.RoundToInt(happiness), finalCoins, cat.IsSpecial,
+                        _reputation != null ? _reputation.Level : 0, boosted);
 
                     _reputation.AwardPensionXp(happiness, cat.IsSpecial);
                     CatHotel.Audio.CatSoundManager.Instance?.PlayDeparture();
@@ -759,31 +807,120 @@ namespace CatHotel.Hotel
             {
                 // Fallback if no panel
                 _economy.AddCoins(totalCoins);
+                GameAnalytics.PensionComplete(Mathf.RoundToInt(happiness), totalCoins, cat.IsSpecial,
+                    _reputation != null ? _reputation.Level : 0, boosted);
                 _reputation.AwardPensionXp(happiness, cat.IsSpecial);
                 CatHotel.Audio.CatSoundManager.Instance?.PlayDeparture();
                 FinalizeDeparture(cat);
             }
         }
 
-        /// <summary>Process adoption for a refuge cat (called when adopter arrives).</summary>
+        // ========== ADOPTION (refuge) ==========
+
+        private bool IsTutorialRunning =>
+            Tutorial.TutorialManager.Instance != null && Tutorial.TutorialManager.Instance.IsActive;
+
+        /// <summary>
+        /// Accumulates the continuous happy time of a refuge cat; once it reaches
+        /// adoptionHappyDuration an adopter takes the cat (GDD 3.10).
+        /// </summary>
+        private void UpdateAdoption(CatInstance cat, float dt)
+        {
+            if (cat.State == CatState.Leaving || cat.State == CatState.Pickup
+                || cat.State == CatState.Adopted || cat.State == CatState.Arriving)
+                return;
+
+            // The tutorial drives its own refuge cat: no adoption until it is over.
+            if (IsTutorialRunning || cat.Happiness == null)
+            {
+                cat.HappyDuration = 0f;
+                return;
+            }
+            // Not in the middle of a fight or a stair climb (the departure walk would be interrupted).
+            if (cat.Entity == null || cat.Entity.IsFighting || cat.Entity.IsChangingFloor)
+                return;
+
+            if (cat.Happiness.Value >= _config.adoptionHappyThreshold)
+                cat.HappyDuration += dt;
+            else
+                cat.HappyDuration = 0f;
+
+            if (cat.HappyDuration >= _config.adoptionHappyDuration)
+                ProcessAdoption(cat);
+        }
+
+        /// <summary>
+        /// An adopter takes a refuge cat: the cat walks out through the refuge entrance, then the
+        /// adoption recap shows the fee (x2 via rewarded ad). Coins, XP and the departure are
+        /// finalized when the recap collects.
+        /// </summary>
         public void ProcessAdoption(CatInstance cat)
         {
-            if (cat.Mode != CatMode.Refuge) return;
+            if (cat == null || cat.Mode != CatMode.Refuge) return;
+            if (cat.State == CatState.Leaving || cat.State == CatState.Pickup || cat.State == CatState.Adopted)
+                return;
 
+            cat.State = CatState.Adopted;
+            cat.Entity.SetDeparting();
+
+            // Frozen-floor cats: skip the walk so the player still gets the reward.
+            int visibleFloor = _gridRenderer != null ? _gridRenderer.CurrentFloor : 0;
+            if (cat.Entity.FloorIndex != visibleFloor)
+            {
+                ShowAdoptionPanel(cat);
+                return;
+            }
+
+            // Adopted cats leave via the refuge entrance (bottom-left, no door animation)
+            cat.Entity.WalkToTarget(_gridRenderer.RefugeEntrance, () => ShowAdoptionPanel(cat));
+        }
+
+        private void ShowAdoptionPanel(CatInstance cat)
+        {
+            float happiness = cat.Happiness != null ? cat.Happiness.Value : _config.adoptionHappyThreshold;
+            bool boosted = CurrentBoostMultiplier > 1f;
             float fee = cat.Breed.revenueMultiplier * _config.adoptionFeeMultiplier
-                * 100f * (cat.Happiness.Value / 100f);
+                * 100f * (happiness / 100f) * CurrentBoostMultiplier;
             int coins = Mathf.RoundToInt(fee);
-            _economy.AddCoins(coins);
 
-            // Award XP for completed adoption
-            _reputation.AwardAdoptionXp(cat.Happiness.Value, cat.IsSpecial);
+            void Collect(int finalCoins)
+            {
+                _economy.AddCoins(finalCoins);
+                GameAnalytics.AdoptionComplete(cat.Breed != null ? cat.Breed.name : null, finalCoins, boosted);
+                _reputation.AwardAdoptionXp(happiness, cat.IsSpecial);
+                CatHotel.Audio.CatSoundManager.Instance?.PlayDeparture();
+                FinalizeDeparture(cat);
+            }
 
-            StartCatDeparture(cat, CatState.Adopted);
+            Sprite frontSprite = cat.IsSpecial && cat.Breed.specialFrontSprite != null
+                ? cat.Breed.specialFrontSprite : cat.Breed.frontSprite;
+
+            var panel = GetComponent<EndPensionPanel>();
+            if (panel != null)
+            {
+                panel.Show(new PensionEndData
+                {
+                    CatSprite = frontSprite,
+                    CatName = cat.CatName,
+                    AvgHappiness = happiness,
+                    BaseCoins = coins,
+                    TipCoins = 0,
+                    TotalCoins = coins,
+                    IsAdoption = true
+                }, Collect);
+            }
+            else
+            {
+                Collect(coins);
+            }
         }
 
         /// <summary>Unhappy cat leaves via right exit with sad walk + door animation.</summary>
         private void StartUnhappyDeparture(CatInstance cat)
         {
+            // Asset name (e.g. Breed_Europeen2): unique per variant, unlike breedName
+            GameAnalytics.CatLeftUnhappy(cat.Breed != null ? cat.Breed.name : null,
+                _reputation != null ? _reputation.Level : 0);
             cat.State = CatState.Leaving;
             cat.Entity.SetDeparting();
             cat.Entity.SetSadWalk();
@@ -808,24 +945,6 @@ namespace CatHotel.Hotel
                 if (exitDoor != null) exitDoor.PlayOpenClose();
                 FinalizeDeparture(cat);
             });
-        }
-
-        private void StartCatDeparture(CatInstance cat, CatState reason)
-        {
-            cat.State = reason;
-            cat.Entity.SetDeparting();
-            CatHotel.Audio.CatSoundManager.Instance?.PlayDeparture();
-
-            // Frozen-floor cats: skip walk, finalize immediately so the player still gets the reward.
-            int visibleFloor = _gridRenderer != null ? _gridRenderer.CurrentFloor : 0;
-            if (cat.Entity.FloorIndex != visibleFloor)
-            {
-                FinalizeDeparture(cat);
-                return;
-            }
-
-            // Adopted/refuge cats leave via bottom-left entrance (no door animation)
-            cat.Entity.WalkToTarget(_gridRenderer.RefugeEntrance, () => FinalizeDeparture(cat));
         }
 
         /// <summary>Immediately remove a cat from the game (used by tutorial to despawn the first cat).</summary>
@@ -856,12 +975,6 @@ namespace CatHotel.Hotel
             SaveProgression();
         }
 
-        private void OnRewardedAdCompleted()
-        {
-            if (RevenueBoostManager.Instance != null)
-                RevenueBoostManager.Instance.ActivateBoost();
-        }
-
         /// <summary>Get average happiness across all cats.</summary>
         public float GetAverageHappiness()
         {
@@ -889,9 +1002,19 @@ namespace CatHotel.Hotel
         {
             int n = 0;
             foreach (var c in _cats)
+            {
+                // Cats on their way out (picked up, adopted, leaving) no longer count
+                if (c.State == CatState.Leaving || c.State == CatState.Pickup || c.State == CatState.Adopted)
+                    continue;
                 if (c.Happiness != null && c.Happiness.Value >= ReputationManager.HappyCatThreshold)
                     n++;
+            }
             return n;
+        }
+
+        private void OnReputationLevelUp(int newLevel)
+        {
+            GameAnalytics.LevelUp(newLevel, _playTimeSeconds / 60);
         }
 
         // ========== CLOUD SAVE INTEGRATION ==========
@@ -912,6 +1035,7 @@ namespace CatHotel.Hotel
                 // Preserve tutorial state — these are written by TutorialManager, not by hotel state
                 tutorialStepIndex = prev?.tutorialStepIndex ?? 0,
                 tutorialComplete  = prev?.tutorialComplete ?? false,
+                playTimeSeconds = _playTimeSeconds,
                 placedObjects = new List<PlacedObjectSaveData>(),
                 cats = new List<CatCloudSaveData>()
             };

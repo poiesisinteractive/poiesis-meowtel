@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- REAL sources of com.unity.services.cloudsave@3.4.0 (needle-mirror), compiled in place from lib/pkgsrc. -->
+  <PropertyGroup>
+    <AssemblyName>Unity.Services.CloudSave</AssemblyName>
+    <PkgDir>$(HarnessRoot)lib/pkgsrc/com.unity.services.cloudsave@3.4.0/</PkgDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(PkgDir)Runtime/**/*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="$(NewtonsoftDll)"><Private>false</Private></Reference>
+    <ProjectReference Include="Unity.Services.Core.csproj" />
+    <ProjectReference Include="Unity.Services.Authentication.csproj" />
+  </ItemGroup>
+</Project>

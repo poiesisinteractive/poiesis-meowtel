@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Mirrors Unity's Assembly-CSharp-firstpass: runtime scripts under Assets/Plugins (DOTween modules, DOTweenPro sources),
+       referenced in place. -->
+  <PropertyGroup>
+    <AssemblyName>Assembly-CSharp-firstpass</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MeowtelRepo)/Assets/Plugins/**/*.cs"
+             Exclude="$(MeowtelRepo)/Assets/Plugins/**/Editor/**" />
+  </ItemGroup>
+  <Import Project="../references.props" />
+</Project>
